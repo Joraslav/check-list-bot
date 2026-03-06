@@ -24,9 +24,9 @@ struct Task {
 };
 
 struct TaskStatistics {
-    short total;
-    short completed;
-    short active;
+    int total;
+    int completed;
+    int active;
 };
 
 }  // namespace database
