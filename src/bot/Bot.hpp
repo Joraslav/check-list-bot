@@ -1,6 +1,7 @@
 #pragma once
 
-#include "tgbot/tgbot.h"
+#include "tgbot/Bot.h"
+#include "tgbot/types/Message.h"
 
 #include "TaskDB.hpp"
 
@@ -12,14 +13,21 @@ namespace bot {
 
 class Bot {
  public:
+    using Message = TgBot::Message;
+    using TgException = TgBot::TgException;
 
-    Bot(std::string_view token);
+    Bot(std::string_view token, std::string_view db_path);
     ~Bot();
 
-    /// @brief Run the bot (blocking)
+    /**
+     * @brief Run the bot
+     */
     void Run();
 
  private:
+    /**
+     * @brief Setup all handlers
+     */
     void SetupHandlers();
 
     std::unique_ptr<TgBot::Bot> tg_bot_;

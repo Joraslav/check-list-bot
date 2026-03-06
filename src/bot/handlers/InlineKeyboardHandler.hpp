@@ -2,7 +2,4 @@
 
 #include "tgbot/tgbot.h"
 
-namespace bot
-{
-    
-} // namespace bot
+namespace bot {}  // namespace bot
