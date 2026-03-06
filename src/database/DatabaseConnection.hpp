@@ -8,8 +8,6 @@
 
 namespace database {
 
-using TaskList = std::vector<Task>;
-
 /**
  * @brief Interface for database connection
  */
@@ -34,7 +32,7 @@ class DatabaseConnection {
      * @throw `std::runtime_error` if task is not added
      */
     virtual int64_t AddTask(int64_t user_id, const std::string& text,
-                                                        TaskStatus status = TaskStatus::ACTIVE) = 0;
+                            TaskStatus status = TaskStatus::ACTIVE) = 0;
 
     /**
      * @brief Get ALL users tasks

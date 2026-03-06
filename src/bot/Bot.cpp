@@ -6,6 +6,10 @@
 #include "magic_enum/magic_enum.hpp"
 #include "TaskDB.hpp"
 
+#include "handlers/ConsoleHandler.hpp"
+#include "handlers/ReplyKeyboardHandler.hpp"
+#include "handlers/InlineKeyboardHandler.hpp"
+
 #include <format>
 #include <memory>
 #include <string>
@@ -18,12 +22,16 @@ Bot::Bot(std::string_view token, std::string_view db_path) {
     tg_bot_ = std::make_unique<TgBot::Bot>(token.data());
     db_ = std::make_unique<database::TaskDB>(db_path);
 
-    LOG(BotLog, INFO, "Bot initialized with token: {}", token);
+    LOG(BotLog, INFO, "Bot initialized!");
 }
 
 Bot::~Bot() { LOG(BotLog, INFO, "Bot shutting down"); }
 
-void Bot::SetupHandlers() {}
+void Bot::SetupHandlers() {
+    ConsoleHandler::Register(*tg_bot_);
+    ReplyKeyboardHandler::Register(*tg_bot_);
+    InlineKeyboardHandler::Register(*tg_bot_);
+}
 
 void Bot::Run() {
     SetupHandlers();
