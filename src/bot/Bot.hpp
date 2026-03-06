@@ -12,7 +12,6 @@ namespace bot {
 
 class Bot {
  public:
-
     Bot(std::string_view token);
     ~Bot();
 

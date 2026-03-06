@@ -1,9 +1,6 @@
 #pragma once
 
-#include "tgbot/types/InlineKeyboardMarkup.h"
 #include "tgbot/types/InlineKeyboardButton.h"
+#include "tgbot/types/InlineKeyboardMarkup.h"
 
-namespace bot
-{
-    
-} // namespace bot
+namespace bot {}  // namespace bot

@@ -88,18 +88,19 @@ concept ValidLogLevel = L == LogLevel::INFO || L == LogLevel::DEBUG || L == LogL
  * @param level log level
  * @param format_str format string
  */
-#define LOG_IMPL(category_name, level, format_str, ...)                                         \
-    do {                                                                                        \
-        if constexpr (logging::LogLevel::level >= logging::kMinLevel &&                         \
-                      logging::LogLevel::level <= logging::kMaxLevel)                           \
-            static_assert(logging::ValidLogLevel<logging::LogLevel::level>,                  \
-                          "Verbosity must be one of: INFO, DEBUG, WARNING, ERROR, FATAL");      \
-        static_assert(logging::ValidLogCategory<decltype(category_name)>,                       \
-                      "Category must be of type LogCategory");                                  \
-        static_assert(logging::LoggableMessage<decltype(format_str)>,                           \
-                      "Message must be convertible to std::string or std::string_view");        \
-        logging::Log::GetInstance().Loging(category_name, logging::LogLevel::level,             \
-                                           std::format(format_str __VA_OPT__(, ) ##__VA_ARGS__)); \
+#define LOG_IMPL(category_name, level, format_str, ...)                                          \
+    do {                                                                                         \
+        if constexpr (logging::LogLevel::level >= logging::kMinLevel &&                          \
+                      logging::LogLevel::level <= logging::kMaxLevel)                            \
+            static_assert(logging::ValidLogLevel<logging::LogLevel::level>,                      \
+                          "Verbosity must be one of: INFO, DEBUG, WARNING, ERROR, FATAL");       \
+        static_assert(logging::ValidLogCategory<decltype(category_name)>,                        \
+                      "Category must be of type LogCategory");                                   \
+        static_assert(logging::LoggableMessage<decltype(format_str)>,                            \
+                      "Message must be convertible to std::string or std::string_view");         \
+        logging::Log::GetInstance().Loging(category_name, logging::LogLevel::level,              \
+                                           std::format(format_str __VA_OPT__(, )##__VA_ARGS__)); \
     } while (false)
 
-#define LOG(category_name, level, format_str, ...) LOG_IMPL(category_name, level, format_str, ##__VA_ARGS__)
+#define LOG(category_name, level, format_str, ...) \
+    LOG_IMPL(category_name, level, format_str, ##__VA_ARGS__)
