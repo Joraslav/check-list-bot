@@ -82,6 +82,17 @@ out/
 Testing/
 .cache/
 
+# Clang files
+.clang-format
+.clang-format-cache
+.clang-tidy
+.clang-tidy-cache
+
+# Git files
+.github/
+.gitignore
+.gitattributes
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
