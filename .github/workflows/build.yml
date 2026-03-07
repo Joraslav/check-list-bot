@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: ["main"]
 
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+  issues: read
+  security-events: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,7 +38,7 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{matrix.configuration}}
 
       - name: Archive Artifacts
-        run: tar -czvf artifacts-${{matrix.configuration}}.tar.gz build/bin
+        run: tar -czvf artifacts-${{matrix.configuration}}.tar.gz build
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
