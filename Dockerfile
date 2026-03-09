@@ -12,8 +12,8 @@ RUN apt-get update && \
     python3-venv \
     curl
 
-# RUN curl -sSL https://install.python-poetry.org | python3 -
-RUN pip3 install --no-cache-dir poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
 
 COPY pyproject.toml poetry.lock /app/
 
@@ -29,5 +29,5 @@ RUN poetry run conan install . --build=missing -pr:h profiles/Release -pr:b prof
 
 COPY . /app/
 
-RUN cmake --preset conan-release
-RUN cmake --build --preset conan-release
+RUN poetry cmake --preset conan-release
+RUN poetry cmake --build --preset conan-release
