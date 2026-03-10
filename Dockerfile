@@ -29,5 +29,6 @@ RUN poetry run conan install . --build=missing -pr:h profiles/Release -pr:b prof
 
 COPY . /app/
 
-RUN poetry run cmake --preset conan-release
-RUN poetry run cmake --build --preset conan-release
+RUN poetry run cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
+    -DCMAKE_BUILD_TYPE=Release
+RUN poetry run cmake --build build --config Release
