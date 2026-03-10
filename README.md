@@ -111,12 +111,6 @@ check-list-bot/
 Проект использует clang-format. Проверить форматирование можно через скрипт:
 
 ```bash
-./scripts/init_project.sh
-```
-
-Или вручную:
-
-```bash
 find src -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i
 ```
 
