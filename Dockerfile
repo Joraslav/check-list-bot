@@ -29,5 +29,5 @@ RUN poetry run conan install . --build=missing -pr:h profiles/Release -pr:b prof
 
 COPY . /app/
 
-RUN poetry cmake --preset conan-release
-RUN poetry cmake --build --preset conan-release
+RUN poetry run cmake --preset conan-release
+RUN poetry run cmake --build --preset conan-release
