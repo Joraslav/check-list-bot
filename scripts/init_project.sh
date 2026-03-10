@@ -26,20 +26,6 @@ poetry config virtualenvs.in-project true
 
 echo -e "${YELLOW}Создание виртуального окружения Python...${NC}"
 
-if [ -d ".venv" ]; then
-    echo -e "${YELLOW}Удаляем существующую папку .venv...${NC}"
-    rm -rf .venv
-fi
-
-python3 -m venv .venv
-
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✓ Виртуальное окружение успешно создано в папке .venv${NC}"
-else
-    echo -e "${RED}✗ Ошибка при создании виртуального окружения${NC}"
-    exit 1
-fi
-
 echo -e "${YELLOW}Инсталляция зависимостей...${NC}"
 
 poetry install
