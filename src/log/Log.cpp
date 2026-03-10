@@ -83,11 +83,9 @@ class Log::Impl {
         if (file_logger_->should_log(spd_level)) {
             file_logger_->log(spd_level, message);
         }
-        if (level == LogLevel::FATAL)
-        {
+        if (level == LogLevel::FATAL) {
             // TODO: Отправка сигнала на остановку работы
         }
-        
     }
 
  private:
