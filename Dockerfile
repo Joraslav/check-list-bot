@@ -32,3 +32,4 @@ COPY . /app/
 RUN poetry run cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
     -DCMAKE_BUILD_TYPE=Release
 RUN poetry run cmake --build build --config Release
+CMD ["./build/check-list-bot"]
