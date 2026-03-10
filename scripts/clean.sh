@@ -1,12 +1,17 @@
 #!/bin/bash
 
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
 # Функция для обработки ошибок
 error_exit() {
-    echo "Ошибка: $1"
+    echo -e "${RED}Ошибка: $1${NC}"
     exit 1
 }
 
-echo "Очистка рабочей области..."
+echo -e "${YELLOW}Очистка рабочей области...${NC}"
 
 if [ -d "build" ]; then
     rm -rf build || error_exit "Не удалось удалить папку build"
@@ -20,4 +25,8 @@ if [ -d "out" ]; then
     find out -mindepth 1 -delete || error_exit "Не удалось очистить папку out"
 fi
 
-echo "Очистка завершена!"
+if [ -d ".venv" ]; then
+    rm -rf .venv || error_exit "Не удалось удалить папку .venv"
+fi
+
+echo -e "${GREEN}Очистка завершена!${NC}"

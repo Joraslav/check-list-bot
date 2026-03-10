@@ -17,12 +17,7 @@ fi
 
 echo "Настройка окружения проекта для сборки типа $BUILD_TYPE..."
 
-if [ ! -f "~/.conan2/profiles/default" ]; then
-    echo "Создание дефолтного профиля Conan..."
-    conan profile detect --force
-fi
-
 echo "Установка зависимостей Conan..."
-conan install . --build=missing -pr profiles/$BUILD_TYPE
+conan install . --build=missing -pr:h profiles/$BUILD_TYPE -pr:b profiles/$BUILD_TYPE
 
 echo "Окружение успешно настроено!"
