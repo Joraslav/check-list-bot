@@ -56,7 +56,7 @@ echo -e "${YELLOW}Настройка и установка библиотек С
 poetry run conan install . --build=missing -pr:h profiles/Debug -pr:b profiles/Debug
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✓ Виртуальное окружение успешно установленно и настроенно${NC}"
+    echo -e "${GREEN}✓ Виртуальное окружение успешно установлено и настроено${NC}"
     echo -e "${YELLOW}Для активации окружения выполните:${NC}"
     echo -e "${GREEN}source .venv/bin/activate${NC}"
 else
