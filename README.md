@@ -86,7 +86,7 @@ docker run -e TOKEN="your-telegram-bot-token" check-list-bot
 
 ## Структура проекта
 
-```planetext
+```plaintext
 check-list-bot/
 ├── src/
 │   ├── bot/           – логика бота, обработчики команд
