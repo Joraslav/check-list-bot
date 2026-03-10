@@ -40,7 +40,7 @@ else
     exit 1
 fi
 
-echo -e "${YELLOW}Инсталяция зависимостей...${NC}"
+echo -e "${YELLOW}Инсталляция зависимостей...${NC}"
 
 poetry install
 
