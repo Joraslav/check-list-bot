@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.31.0)
-project(check-list-keyboard
+project(check-list-bot
     VERSION 0.1.0
     LANGUAGES CXX
-    DESCRIPTION "Check-list-keyboard is a Telegram keyboard for managment of tasks.")
+    DESCRIPTION "Check-list-bot is a Telegram bot for management of tasks.")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
