@@ -13,11 +13,12 @@ using InlineKeyboardButton = InlineKeyboard::InlineKeyboardButton;
 
 InlineKeyboardMarkup::Ptr InlineKeyboard::CreateTaskSelection(const TaskList& tasks) {
     auto keyboard = std::make_shared<InlineKeyboardMarkup>();
-    for (const Task& task : tasks) {
+    for (std::size_t i = 0; i < tasks.size(); ++i) {
+        const Task& task = tasks[i];
         std::vector<InlineKeyboardButton::Ptr> row;
         auto button = std::make_shared<InlineKeyboardButton>();
         button->text = task.text;
-        button->callbackData = "task_"s.append(std::to_string(task.user_id));
+        button->callbackData = "task_"s.append(std::to_string(i));
         row.push_back(button);
         keyboard->inlineKeyboard.push_back(row);
     }
