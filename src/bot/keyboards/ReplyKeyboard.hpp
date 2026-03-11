@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tgbot/types/ReplyKeyboardMarkup.h"
+#include "tgbot/types/ReplyKeyboardRemove.h"
 
 namespace bot {
 

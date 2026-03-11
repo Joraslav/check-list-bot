@@ -1,20 +1,23 @@
 #pragma once
 
-#include "tgbot/tgbot.h"
+#include "tgbot/Bot.h"
+#include "tgbot/types/CallbackQuery.h"
 
-namespace bot
-{
+namespace bot {
 
 class InlineKeyboardHandler {
-public:
+ public:
+    using CallbackQuery = TgBot::CallbackQuery;
+    using TgException = TgBot::TgException;
+
     /**
      * @brief Register inline keyboard callback handlers.
      * @param bot Reference to TgBot::Bot
      */
     static void Register(TgBot::Bot& bot);
 
-private:
-    static void OnCallback(TgBot::Bot& bot, TgBot::CallbackQuery::Ptr query);
+ private:
+    static void OnCallback(TgBot::Bot& bot, CallbackQuery::Ptr query);
 };
 
-} // namespace bot
+}  // namespace bot

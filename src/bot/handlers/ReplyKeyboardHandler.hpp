@@ -1,20 +1,22 @@
 #pragma once
 
-#include "tgbot/tgbot.h"
+#include "tgbot/Bot.h"
+#include "tgbot/types/Message.h"
 
-namespace bot
-{
+namespace bot {
 
 class ReplyKeyboardHandler {
-public:
+ public:
+    using Message = TgBot::Message;
+
     /**
      * @brief Register reply keyboard button handlers.
      * @param bot Reference to TgBot::Bot
      */
     static void Register(TgBot::Bot& bot);
 
-private:
-    static void OnButton(TgBot::Bot& bot, TgBot::Message::Ptr message);
+ private:
+    static void OnButton(TgBot::Bot& bot, Message::Ptr message);
 };
 
-} // namespace bot
+}  // namespace bot

@@ -1,5 +1,5 @@
-file(GLOB UTILS_INCLUDE *.hpp *.h)
-file(GLOB UTILS_SOURCE *.cpp)
+file(GLOB UTILS_INCLUDE CONFIGURE_DEPENDS *.hpp *.h)
+file(GLOB UTILS_SOURCE CONFIGURE_DEPENDS *.cpp)
 
 add_library(utils STATIC
     ${UTILS_INCLUDE}

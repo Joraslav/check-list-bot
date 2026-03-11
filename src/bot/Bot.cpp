@@ -2,13 +2,11 @@
 
 #include "tgbot/tgbot.h"
 
+#include "handlers/InlineKeyboardHandler.hpp"
+#include "handlers/ReplyKeyboardHandler.hpp"
 #include "Log.hpp"
 #include "magic_enum/magic_enum.hpp"
 #include "TaskDB.hpp"
-
-#include "handlers/ConsoleHandler.hpp"
-#include "handlers/ReplyKeyboardHandler.hpp"
-#include "handlers/InlineKeyboardHandler.hpp"
 
 #include <format>
 #include <memory>
@@ -28,7 +26,6 @@ Bot::Bot(std::string_view token, std::string_view db_path) {
 Bot::~Bot() { LOG(BotLog, INFO, "Bot shutting down"); }
 
 void Bot::SetupHandlers() {
-    ConsoleHandler::Register(*tg_bot_);
     ReplyKeyboardHandler::Register(*tg_bot_);
     InlineKeyboardHandler::Register(*tg_bot_);
 }

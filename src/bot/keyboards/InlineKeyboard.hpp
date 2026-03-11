@@ -5,25 +5,26 @@
 
 #include "Task.hpp"
 
-// TODO: Исправить класс InlineKeyboard
-
 namespace bot {
 
 class InlineKeyboard {
  public:
+    using InlineKeyboardMarkup = TgBot::InlineKeyboardMarkup;
+    using InlineKeyboardButton = TgBot::InlineKeyboardButton;
+
     /**
      * @brief Create an inline keyboard for task selection.
      * @param tasks List of tasks.
      * @return TgBot::InlineKeyboardMarkup::Ptr
      */
-    static TgBot::InlineKeyboardMarkup::Ptr CreateTaskSelection(const database::TaskList& tasks);
+    static InlineKeyboardMarkup::Ptr CreateTaskSelection(const database::TaskList& tasks);
 
     /**
      * @brief Create an inline keyboard for confirmation (Yes/No).
      * @param callback_data_prefix Prefix for callback data (e.g., "confirm_").
      * @return TgBot::InlineKeyboardMarkup::Ptr
      */
-    static TgBot::InlineKeyboardMarkup::Ptr CreateConfirmation(
+    static InlineKeyboardMarkup::Ptr CreateConfirmation(
         const std::string& callback_data_prefix = "confirm");
 
     /**
@@ -33,7 +34,7 @@ class InlineKeyboard {
      * @param callback_prefix Prefix for callback data (e.g., "page_").
      * @return TgBot::InlineKeyboardMarkup::Ptr
      */
-    static TgBot::InlineKeyboardMarkup::Ptr CreatePagination(
+    static InlineKeyboardMarkup::Ptr CreatePagination(
         int current_page, int total_pages, const std::string& callback_prefix = "page");
 
     /**
@@ -42,7 +43,7 @@ class InlineKeyboard {
      * @param callback_data Callback data.
      * @return TgBot::InlineKeyboardButton::Ptr
      */
-    static TgBot::InlineKeyboardButton::Ptr CreateButton(const std::string& text,
+    static InlineKeyboardButton::Ptr CreateButton(const std::string& text,
                                                          const std::string& callback_data);
 };
 
