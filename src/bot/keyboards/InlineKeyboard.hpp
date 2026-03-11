@@ -34,8 +34,8 @@ class InlineKeyboard {
      * @param callback_prefix Prefix for callback data (e.g., "page_").
      * @return TgBot::InlineKeyboardMarkup::Ptr
      */
-    static InlineKeyboardMarkup::Ptr CreatePagination(
-        int current_page, int total_pages, const std::string& callback_prefix = "page");
+    static InlineKeyboardMarkup::Ptr CreatePagination(int current_page, int total_pages,
+                                                      const std::string& callback_prefix = "page");
 
     /**
      * @brief Create a simple inline button.
@@ -44,7 +44,7 @@ class InlineKeyboard {
      * @return TgBot::InlineKeyboardButton::Ptr
      */
     static InlineKeyboardButton::Ptr CreateButton(const std::string& text,
-                                                         const std::string& callback_data);
+                                                  const std::string& callback_data);
 };
 
 }  // namespace bot
