@@ -1,5 +1,5 @@
-file(GLOB DATABASE_INCLUDE *.hpp *.h)
-file(GLOB DATABASE_SOURCE *.cpp)
+file(GLOB DATABASE_INCLUDE CONFIGURE_DEPENDS *.hpp *.h)
+file(GLOB DATABASE_SOURCE CONFIGURE_DEPENDS *.cpp)
 
 add_library(database STATIC
     ${DATABASE_INCLUDE}
@@ -7,15 +7,14 @@ add_library(database STATIC
 )
 
 target_include_directories(database PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(database PUBLIC SQLiteCpp)
-target_include_directories(database PUBLIC magic_enum::magic_enum)
-target_include_directories(database PUBLIC ${CMAKE_SOURCE_DIR}/src/utils)
-target_include_directories(database PUBLIC ${CMAKE_SOURCE_DIR}/src/log)
-
-target_link_libraries(database SQLiteCpp)
-target_link_libraries(database magic_enum::magic_enum)
-target_link_libraries(database utils)
-target_link_libraries(database log)
+target_link_libraries(database
+    PUBLIC
+        SQLiteCpp
+    PRIVATE
+        magic_enum::magic_enum
+        utils
+        log
+)
 
 if(TARGET database)
     message(STATUS "Lib DataBase ready to compile")

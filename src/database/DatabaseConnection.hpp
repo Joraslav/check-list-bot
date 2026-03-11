@@ -8,8 +8,6 @@
 
 namespace database {
 
-using TaskList = std::vector<Task>;
-
 /**
  * @brief Interface for database connection
  */

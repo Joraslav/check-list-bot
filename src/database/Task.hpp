@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace database {
 
@@ -24,9 +25,11 @@ struct Task {
 };
 
 struct TaskStatistics {
-    short total;
-    short completed;
-    short active;
+    int total;
+    int completed;
+    int active;
 };
+
+using TaskList = std::vector<Task>;
 
 }  // namespace database

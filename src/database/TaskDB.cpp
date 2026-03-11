@@ -122,7 +122,6 @@ std::optional<TaskList> TaskDB::GetActiveOrCompletedTasks(int64_t user_id, TaskS
     }
 }
 
-// TODO: Исправить SQL запрос
 TaskStatistics TaskDB::GetUserStatistics(int64_t user_id) {
     ScopedStatement stmt(statement_manager_->Get(StatementType::GET_USER_STATISTICS));
     try {
@@ -132,14 +131,9 @@ TaskStatistics TaskDB::GetUserStatistics(int64_t user_id) {
                 TaskStatistics stats{.total = stmt->getColumn(1).getInt(),
                                      .completed = stats.completed = stmt->getColumn(2).getInt(),
                                      .active = stats.active = stmt->getColumn(3).getInt()};
-                // stats.total = stmt->getColumn(1).getInt();
-                // // SUM(status) where status = 1 for completed? Assuming COMPLETED = 1, ACTIVE = 0
-                // stats.completed = stmt->getColumn(2).getInt();
-                // stats.active = stmt->getColumn(3).getInt();
                 return stats;
             }
         }
-        // If user not found, return zero statistics
         return TaskStatistics{0, 0, 0};
     } catch (const Exception& e) {
         throw std::runtime_error("SQL error in GetUserStatistics: "s.append(e.what()));

@@ -1,5 +1,8 @@
-file(GLOB BOT_INCLUDE *.hpp *.h)
-file(GLOB BOT_SOURCE *.cpp)
+file(GLOB BOT_INCLUDE CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+file(GLOB BOT_SOURCE CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/keyboards)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/handlers)
 
 add_library(bot STATIC
     ${BOT_INCLUDE}
@@ -7,15 +10,17 @@ add_library(bot STATIC
 )
 
 target_include_directories(bot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(bot PUBLIC tgBot::tgBot)
-target_include_directories(bot PUBLIC magic_enum::magic_enum)
-target_include_directories(bot PUBLIC ${CMAKE_SOURCE_DIR}/src/utils)
-target_include_directories(bot PUBLIC database)
-
-target_link_libraries(bot tgbot::tgbot)
-target_link_libraries(bot utils)
-target_link_libraries(bot database)
-target_link_libraries(bot magic_enum::magic_enum)
+target_link_libraries(bot
+    PUBLIC
+        database
+        keyboard
+        handler
+        tgbot::tgbot
+    PRIVATE
+        magic_enum::magic_enum
+        utils
+        log
+)
 
 if(TARGET bot)
     message(STATUS "Lib Bot ready to compile")
