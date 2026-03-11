@@ -22,8 +22,8 @@ void ReplyKeyboardHandler::OnButton(TgBot::Bot& bot, Message::Ptr message) {
     if (!message->text.empty()) {
         std::string text = message->text;
         // Check if it's a button from our reply keyboard
-        if (text == "/start"s || text == "/help"s || text == "/list"s || text == "/add"s ||
-            text == "/delete"s || text == "/done"s) {
+        if (text == "start"s || text == "help"s || text == "list"s || text == "add"s ||
+            text == "delete"s || text == "done"s) {
             // These are already handled by command handlers, ignore
             return;
         }
