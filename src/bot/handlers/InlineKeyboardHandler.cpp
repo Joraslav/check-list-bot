@@ -12,22 +12,23 @@ namespace bot {
 using std::string_literals::operator""s;
 
 void InlineKeyboardHandler::Register(TgBot::Bot& bot) {
-    bot.getEvents().onCallbackQuery([&bot](CallbackQuery::Ptr query) { OnCallback(bot, query); });
+    bot.getEvents().onCallbackQuery(
+        [&bot](const CallbackQuery::Ptr& query) { OnCallback(bot, query); });
 
     LOG(InlineKeyboardHandlerLog, INFO, "InlineKeyboardHandler registered");
 }
 
-void InlineKeyboardHandler::OnCallback(TgBot::Bot& bot, CallbackQuery::Ptr query) {
-    std::string data = query->data;
+void InlineKeyboardHandler::OnCallback(TgBot::Bot& bot, const CallbackQuery::Ptr& query) {
+    const std::string data = query->data;
     std::string response;
     if (data.starts_with("task_")) {
-        int taskId = std::stoi(data.substr(5));
+        const int taskId = std::stoi(data.substr(5));
         response = "Selected task #"s.append(std::to_string(taskId));
     } else if (data.starts_with("confirm_")) {
-        std::string answer = data.substr(8);
+        const std::string answer = data.substr(8);
         response = "You chose "s.append(answer);
     } else if (data.starts_with("page_")) {
-        int page = std::stoi(data.substr(5));
+        const int page = std::stoi(data.substr(5));
         response = "Page "s.append(std::to_string(page));
     } else if (data == "cancel"s) {
         response = "Cancelled."s;

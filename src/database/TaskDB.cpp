@@ -38,7 +38,7 @@ bool TaskDB::IsUserExist(int64_t user_id) {
     ScopedStatement stmt(statement_manager_->Get(StatementType::SELECT_IS_USER_EXIST));
     try {
         stmt->bind(1, user_id);
-        bool exist = stmt->executeStep();
+        const bool exist = stmt->executeStep();
         return exist;
     } catch (const Exception& e) {
         throw std::runtime_error("Error in SQL: "s.append(e.what()));
@@ -58,7 +58,7 @@ int64_t TaskDB::AddTask(int64_t user_id, const std::string& text, TaskStatus sta
         stmt->bind(3, static_cast<int>(status));
 
         if (stmt->executeStep()) {
-            int64_t task_id = stmt->getColumn(0).getInt64();
+            const int64_t task_id = stmt->getColumn(0).getInt64();
             return task_id;
         }
 
@@ -79,8 +79,8 @@ std::optional<TaskList> TaskDB::GetAllTasks(int64_t user_id) {
         while (stmt->executeStep()) {
             // id is column 0, but we don't need it
             const std::string text = stmt->getColumn(1).getString();
-            int status_int = stmt->getColumn(2).getInt();
-            TaskStatus status = static_cast<TaskStatus>(status_int);
+            const int status_int = stmt->getColumn(2).getInt();
+            const auto status = static_cast<TaskStatus>(status_int);
             tasks.emplace_back(user_id, text, status);
         }
         if (tasks.empty()) {
@@ -106,8 +106,8 @@ std::optional<TaskList> TaskDB::GetActiveOrCompletedTasks(int64_t user_id, TaskS
         while (stmt->executeStep()) {
             // id is column 0, but we don't need it
             const std::string text = stmt->getColumn(1).getString();
-            int status_int = stmt->getColumn(2).getInt();
-            TaskStatus status = static_cast<TaskStatus>(status_int);
+            const int status_int = stmt->getColumn(2).getInt();
+            const auto status = static_cast<TaskStatus>(status_int);
             tasks.emplace_back(user_id, text, status);
         }
         if (tasks.empty()) {
@@ -126,11 +126,11 @@ TaskStatistics TaskDB::GetUserStatistics(int64_t user_id) {
     ScopedStatement stmt(statement_manager_->Get(StatementType::GET_USER_STATISTICS));
     try {
         while (stmt->executeStep()) {
-            int64_t row_user_id = stmt->getColumn(0).getInt64();
+            const int64_t row_user_id = stmt->getColumn(0).getInt64();
             if (row_user_id == user_id) {
-                TaskStatistics stats{.total = stmt->getColumn(1).getInt(),
-                                     .completed = stats.completed = stmt->getColumn(2).getInt(),
-                                     .active = stats.active = stmt->getColumn(3).getInt()};
+                const TaskStatistics stats{.total = stmt->getColumn(1).getInt(),
+                                           .completed = stmt->getColumn(2).getInt(),
+                                           .active = stmt->getColumn(3).getInt()};
                 return stats;
             }
         }

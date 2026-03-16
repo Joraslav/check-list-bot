@@ -17,6 +17,9 @@ class DatabaseConnection {
 
     virtual ~DatabaseConnection() = default;
 
+    DatabaseConnection(const DatabaseConnection&) = delete;
+    DatabaseConnection& operator=(const DatabaseConnection&) = delete;
+
     /**
      * @brief Checks the connection to the database
      * @return `True` if connetion is established, `False` is not established
@@ -103,12 +106,6 @@ class DatabaseConnection {
      * @brief Rollback transaction
      */
     virtual void RollbackTransaction() = 0;
-
- protected:
-    DatabaseConnection(const DatabaseConnection&) = delete;
-    DatabaseConnection& operator=(const DatabaseConnection&) = delete;
-
- private:
 };
 
 }  // namespace database

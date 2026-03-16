@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace logging {
 
@@ -26,7 +27,7 @@ constexpr LogLevel kMaxLevel = LogLevel::FATAL;
  */
 class LogCategory {
  public:
-    explicit LogCategory(const std::string& name) : name_(std::move(name)) {}
+    explicit LogCategory(std::string name) : name_(std::move(name)) {}
     ~LogCategory() = default;
 
     /**

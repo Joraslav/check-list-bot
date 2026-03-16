@@ -5,6 +5,7 @@
 
 #include "TaskDB.hpp"
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -16,7 +17,7 @@ class Bot {
     using Message = TgBot::Message;
     using TgException = TgBot::TgException;
 
-    Bot(std::string_view token, std::string_view db_path);
+    Bot(std::string_view token, const std::filesystem::path& db_path);
     ~Bot();
 
     /**
