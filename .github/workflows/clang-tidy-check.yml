@@ -1,0 +1,102 @@
+name: Clang-tidy check
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+  issues: read
+  security-events: write
+
+jobs:
+  clang-tidy:
+    name: Clang-tidy analysis
+    runs-on: ubuntu-latest
+
+    env:
+      REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Conan
+        run: pip install conan
+
+      - name: Install clang-tidy
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy
+
+      - name: Install reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Conan install requirements (Debug)
+        run: conan install . --build=missing -pr:h profiles/Debug -pr:b profiles/Debug
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Run clang-tidy and generate report
+        run: |
+          mkdir -p reports
+          set +e
+          ./scripts/check_tidy.sh --build-dir build 2>&1 | tee reports/clang-tidy-report.txt
+          tidy_exit=${PIPESTATUS[0]}
+          echo "tidy_exit=${tidy_exit}" >> "$GITHUB_ENV"
+          set -e
+
+      - name: Publish clang-tidy remarks in PR
+        if: github.event_name == 'pull_request'
+        run: |
+          reviewdog \
+            -f=clang-tidy \
+            -name="clang-tidy" \
+            -reporter=github-pr-review \
+            -filter-mode=nofilter \
+            -level=warning \
+            -fail-level=none < reports/clang-tidy-report.txt
+
+      - name: Publish clang-tidy summary
+        if: always()
+        run: |
+          if [ ! -f reports/clang-tidy-report.txt ]; then
+            echo "## Clang-tidy report" >> "$GITHUB_STEP_SUMMARY"
+            echo "Отчёт не был сгенерирован." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          warnings_count=$(grep -E "warning:|error:" -c reports/clang-tidy-report.txt || true)
+
+          echo "## Clang-tidy report" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Найдено сообщений: ${warnings_count}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Полный лог приложен как artifact: \\`clang-tidy-report\\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "<details><summary>Последние 80 строк отчёта</summary>" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "\\`\\`\\`text" >> "$GITHUB_STEP_SUMMARY"
+          tail -n 80 reports/clang-tidy-report.txt >> "$GITHUB_STEP_SUMMARY"
+          echo "\\`\\`\\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload clang-tidy report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-report
+          path: reports/clang-tidy-report.txt
+          if-no-files-found: error
+
+      - name: Fail job if clang-tidy found issues
+        if: always()
+        run: |
+          if [ "${tidy_exit}" -ne 0 ]; then
+            echo "clang-tidy завершился с ошибкой (код ${tidy_exit})."
+            exit "${tidy_exit}"
+          fi
