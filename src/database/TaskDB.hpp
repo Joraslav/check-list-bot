@@ -21,7 +21,7 @@ class TaskDB final : public DatabaseConnection {
      * @brief Constructs TaskDB with in-memory database
      */
     TaskDB();
-    virtual ~TaskDB() override = default;
+    ~TaskDB() override = default;
 
     /**
      * @brief Constructs TaskDB with database at db_path

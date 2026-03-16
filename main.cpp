@@ -4,7 +4,7 @@
 
 using std::string_literals::operator""s;
 
-int main(int argc, char** argv) {
+int main() {
 
     std::cout << "Start my bot"s << std::endl;
 

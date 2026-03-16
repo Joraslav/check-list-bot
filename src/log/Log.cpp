@@ -92,7 +92,7 @@ class Log::Impl {
     std::unique_ptr<spdlog::logger> console_logger_;
     std::unique_ptr<spdlog::logger> file_logger_;
 
-    fs::path MakeLogFile() const {
+    static fs::path MakeLogFile() {
         fs::create_directories(kLogDirectory);
         const auto now = ch::system_clock::now();
         const auto now_seconds = ch::floor<ch::seconds>(now);

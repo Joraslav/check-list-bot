@@ -16,9 +16,9 @@ DEFINE_LOG_CATEGORY_STATIC(BotLog);
 
 namespace bot {
 
-Bot::Bot(std::string_view token, std::string_view db_path) {
+Bot::Bot(std::string_view token, const std::filesystem::path& db_path) {
     tg_bot_ = std::make_unique<TgBot::Bot>(token.data());
-    db_ = std::make_unique<database::TaskDB>(db_path);
+    db_ = std::make_unique<database::TaskDB>(db_path.string());
 
     LOG(BotLog, INFO, "Bot initialized!");
 }

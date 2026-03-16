@@ -16,7 +16,7 @@ class ReplyKeyboardHandler {
     static void Register(TgBot::Bot& bot);
 
  private:
-    static void OnButton(TgBot::Bot& bot, Message::Ptr message);
+    static void OnButton(TgBot::Bot& bot, const Message::Ptr& message);
 };
 
 }  // namespace bot

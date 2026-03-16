@@ -17,7 +17,7 @@ class InlineKeyboardHandler {
     static void Register(TgBot::Bot& bot);
 
  private:
-    static void OnCallback(TgBot::Bot& bot, CallbackQuery::Ptr query);
+    static void OnCallback(TgBot::Bot& bot, const CallbackQuery::Ptr& query);
 };
 
 }  // namespace bot

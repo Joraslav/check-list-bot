@@ -3,35 +3,43 @@
 #include "Bot.hpp"
 #include "Log.hpp"
 
+#include <charconv>
+#include <format>
 #include <string>
+#include <string_view>
 
 DEFINE_LOG_CATEGORY_STATIC(InlineKeyboardHandlerLog);
 
 namespace bot {
 
-using std::string_literals::operator""s;
+using std::string_view_literals::operator""sv;
 
 void InlineKeyboardHandler::Register(TgBot::Bot& bot) {
-    bot.getEvents().onCallbackQuery([&bot](CallbackQuery::Ptr query) { OnCallback(bot, query); });
+    bot.getEvents().onCallbackQuery(
+        [&bot](const CallbackQuery::Ptr& query) { OnCallback(bot, query); });
 
     LOG(InlineKeyboardHandlerLog, INFO, "InlineKeyboardHandler registered");
 }
 
-void InlineKeyboardHandler::OnCallback(TgBot::Bot& bot, CallbackQuery::Ptr query) {
-    std::string data = query->data;
+void InlineKeyboardHandler::OnCallback(TgBot::Bot& bot, const CallbackQuery::Ptr& query) {
+    const std::string_view data = query->data;
     std::string response;
-    if (data.starts_with("task_")) {
-        int taskId = std::stoi(data.substr(5));
-        response = "Selected task #"s.append(std::to_string(taskId));
-    } else if (data.starts_with("confirm_")) {
-        std::string answer = data.substr(8);
-        response = "You chose "s.append(answer);
-    } else if (data.starts_with("page_")) {
-        int page = std::stoi(data.substr(5));
-        response = "Page "s.append(std::to_string(page));
-    } else if (data == "cancel"s) {
-        response = "Cancelled."s;
-    } else if (data == "close"s) {
+
+    auto parse_int = [](std::string_view str) -> int {
+        int value = 0;
+        std::from_chars(str.data(), str.data() + str.size(), value);
+        return value;
+    };
+
+    if (data.starts_with("task_"sv)) {
+        response = std::format("Selected task #{}", parse_int(data.substr(5)));
+    } else if (data.starts_with("confirm_"sv)) {
+        response = std::format("You chose {}", data.substr(8));
+    } else if (data.starts_with("page_"sv)) {
+        response = std::format("Page {}", parse_int(data.substr(5)));
+    } else if (data == "cancel"sv) {
+        response = "Cancelled.";
+    } else if (data == "close"sv) {
         // Just answer the callback without sending a message
         try {
             bot.getApi().answerCallbackQuery(query->id);
@@ -40,7 +48,7 @@ void InlineKeyboardHandler::OnCallback(TgBot::Bot& bot, CallbackQuery::Ptr query
         }
         return;
     } else {
-        response = "Unknown callback: "s.append(data);
+        response = std::format("Unknown callback: {}", data);
     }
 
     try {

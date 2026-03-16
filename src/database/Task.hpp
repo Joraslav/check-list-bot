@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace database {
@@ -17,8 +18,8 @@ struct Task {
     std::string text;
     TaskStatus status;
 
-    explicit Task(int64_t p_user_id, const std::string& p_text, TaskStatus p_status)
-        : user_id(p_user_id), text(p_text), status(p_status) {}
+    explicit Task(int64_t p_user_id, std::string p_text, TaskStatus p_status)
+        : user_id(p_user_id), text(std::move(p_text)), status(p_status) {}
 
     explicit Task(int64_t p_user_id, std::string_view p_text, TaskStatus p_status)
         : user_id(p_user_id), text(p_text), status(p_status) {}
