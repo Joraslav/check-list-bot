@@ -102,7 +102,7 @@ jobs:
 
       - name: Upload clang-tidy report artifact
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: clang-tidy-report
           path: reports/clang-tidy-report.txt
