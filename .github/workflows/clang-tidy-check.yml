@@ -52,27 +52,41 @@ jobs:
           echo "tidy_exit=${tidy_exit}" >> "$GITHUB_ENV"
           set -e
 
+      - name: Prepare clang-tidy report for parsing
+        if: always()
+        run: |
+          if [ -f reports/clang-tidy-report.txt ]; then
+            sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g' reports/clang-tidy-report.txt > reports/clang-tidy-report.clean.txt
+          else
+            : > reports/clang-tidy-report.clean.txt
+          fi
+
       - name: Publish clang-tidy remarks in PR
         if: github.event_name == 'pull_request'
         run: |
-          reviewdog \
-            -f=gcc \
-            -name="clang-tidy" \
-            -reporter=github-pr-check \
-            -filter-mode=added \
-            -level=warning \
-            -fail-level=none < reports/clang-tidy-report.txt
+          if grep -Eq '^[^:]+:[0-9]+:[0-9]+: (warning|error): ' reports/clang-tidy-report.clean.txt; then
+            reviewdog \
+              -name="clang-tidy" \
+              -reporter=github-pr-check \
+              -filter-mode=added \
+              -level=warning \
+              -efm='%f:%l:%c: %trror: %m' \
+              -efm='%f:%l:%c: %tarning: %m' \
+              -fail-level=none < reports/clang-tidy-report.clean.txt
+          else
+            echo "No parseable clang-tidy diagnostics for PR annotations."
+          fi
 
       - name: Publish clang-tidy summary
         if: always()
         run: |
-          if [ ! -f reports/clang-tidy-report.txt ]; then
+          if [ ! -f reports/clang-tidy-report.clean.txt ]; then
             echo "## Clang-tidy report" >> "$GITHUB_STEP_SUMMARY"
             echo "Отчёт не был сгенерирован." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          warnings_count=$(grep -E "(warning|error):" -c reports/clang-tidy-report.txt || true)
+          warnings_count=$(grep -E '^[^:]+:[0-9]+:[0-9]+: (warning|error): ' -c reports/clang-tidy-report.clean.txt || true)
 
           echo "## Clang-tidy report" >> "$GITHUB_STEP_SUMMARY"
           echo "- Найдено сообщений: ${warnings_count}" >> "$GITHUB_STEP_SUMMARY"
@@ -81,7 +95,7 @@ jobs:
           echo "<details><summary>Последние 80 строк отчёта</summary>" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "```text" >> "$GITHUB_STEP_SUMMARY"
-          tail -n 80 reports/clang-tidy-report.txt >> "$GITHUB_STEP_SUMMARY"
+          tail -n 80 reports/clang-tidy-report.clean.txt >> "$GITHUB_STEP_SUMMARY"
           echo "```" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "</details>" >> "$GITHUB_STEP_SUMMARY"
