@@ -6,10 +6,13 @@
 #include <charconv>
 #include <format>
 #include <string>
+#include <string_view>
 
 DEFINE_LOG_CATEGORY_STATIC(InlineKeyboardHandlerLog);
 
 namespace bot {
+
+using std::string_view_literals::operator""sv;
 
 void InlineKeyboardHandler::Register(TgBot::Bot& bot) {
     bot.getEvents().onCallbackQuery(
@@ -28,15 +31,15 @@ void InlineKeyboardHandler::OnCallback(TgBot::Bot& bot, const CallbackQuery::Ptr
         return value;
     };
 
-    if (data.starts_with("task_")) {
+    if (data.starts_with("task_"sv)) {
         response = std::format("Selected task #{}", parse_int(data.substr(5)));
-    } else if (data.starts_with("confirm_")) {
+    } else if (data.starts_with("confirm_"sv)) {
         response = std::format("You chose {}", data.substr(8));
-    } else if (data.starts_with("page_")) {
+    } else if (data.starts_with("page_"sv)) {
         response = std::format("Page {}", parse_int(data.substr(5)));
-    } else if (data == "cancel") {
+    } else if (data == "cancel"sv) {
         response = "Cancelled.";
-    } else if (data == "close") {
+    } else if (data == "close"sv) {
         // Just answer the callback without sending a message
         try {
             bot.getApi().answerCallbackQuery(query->id);
