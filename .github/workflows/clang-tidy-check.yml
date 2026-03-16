@@ -21,9 +21,10 @@ jobs:
 
     env:
       REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      tidy_exit: 0
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Conan
         run: pip install conan
@@ -55,10 +56,10 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           reviewdog \
-            -f=clang-tidy \
+            -f=gcc \
             -name="clang-tidy" \
-            -reporter=github-pr-review \
-            -filter-mode=nofilter \
+            -reporter=github-pr-check \
+            -filter-mode=added \
             -level=warning \
             -fail-level=none < reports/clang-tidy-report.txt
 
@@ -71,23 +72,23 @@ jobs:
             exit 0
           fi
 
-          warnings_count=$(grep -E "warning:|error:" -c reports/clang-tidy-report.txt || true)
+          warnings_count=$(grep -E "(warning|error):" -c reports/clang-tidy-report.txt || true)
 
           echo "## Clang-tidy report" >> "$GITHUB_STEP_SUMMARY"
           echo "- Найдено сообщений: ${warnings_count}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Полный лог приложен как artifact: \\`clang-tidy-report\\`." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Полный лог приложен как artifact: clang-tidy-report." >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "<details><summary>Последние 80 строк отчёта</summary>" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "\\`\\`\\`text" >> "$GITHUB_STEP_SUMMARY"
+          echo "```text" >> "$GITHUB_STEP_SUMMARY"
           tail -n 80 reports/clang-tidy-report.txt >> "$GITHUB_STEP_SUMMARY"
-          echo "\\`\\`\\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "```" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "</details>" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload clang-tidy report artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: clang-tidy-report
           path: reports/clang-tidy-report.txt
@@ -96,7 +97,8 @@ jobs:
       - name: Fail job if clang-tidy found issues
         if: always()
         run: |
-          if [ "${tidy_exit}" -ne 0 ]; then
+          tidy_exit_value="${tidy_exit:-0}"
+          if [ "${tidy_exit_value}" -ne 0 ]; then
             echo "clang-tidy завершился с ошибкой (код ${tidy_exit})."
-            exit "${tidy_exit}"
+            exit "${tidy_exit_value}"
           fi

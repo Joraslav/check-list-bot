@@ -10,9 +10,10 @@ NC='\033[0m'
 LIST_ONLY=false
 APPLY_FIXES=false
 BUILD_DIR="build"
+BUILD_TYPE=""
 
 print_usage() {
-	echo "Использование: $0 [--list] [--fix] [--build-dir <path>]"
+	echo "Использование: $0 [--list] [--fix] [--build-dir <path>] [--build-type <Debug|Release|...>]"
 }
 
 while [ $# -gt 0 ]; do
@@ -32,6 +33,15 @@ while [ $# -gt 0 ]; do
 				exit 1
 			fi
 			BUILD_DIR="$2"
+			shift 2
+			;;
+		--build-type)
+			if [ -z "$2" ]; then
+				echo -e "${RED}✗ Не указан тип сборки для --build-type.${NC}"
+				print_usage
+				exit 1
+			fi
+			BUILD_TYPE="$2"
 			shift 2
 			;;
 		--help)
@@ -81,8 +91,14 @@ if [ "$LIST_ONLY" = true ]; then
 fi
 
 if [ ! -f "$BUILD_DIR/compile_commands.json" ]; then
-	echo -e "${YELLOW}compile_commands.json не найден в '$BUILD_DIR'. Запускаю конфигурацию CMake...${NC}"
-	cmake -S . -B "$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	if [ -z "$BUILD_TYPE" ]; then
+		echo -e "${RED}✗ compile_commands.json не найден в '$BUILD_DIR'.${NC}"
+		echo -e "${RED}  Укажите --build-type для автоконфигурации или передайте уже сконфигурированный --build-dir.${NC}"
+		exit 1
+	fi
+
+	echo -e "${YELLOW}compile_commands.json не найден в '$BUILD_DIR'. Запускаю конфигурацию CMake (CMAKE_BUILD_TYPE=$BUILD_TYPE)...${NC}"
+	cmake -S . -B "$BUILD_DIR" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
 fi
 
 if [ ! -f "$BUILD_DIR/compile_commands.json" ]; then
