@@ -2,6 +2,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -11,13 +12,13 @@ namespace bot {
  * @brief Enumeration of available slash commands.
  */
 enum class SlashCommand : unsigned char {
-    Start,   ///< /start - Initialize bot and user
-    Help,    ///< /help - Show help message
-    List,    ///< /list - Show task list
-    Add,     ///< /add - Add new task
-    Delete,  ///< /delete - Delete a task
-    Done,    ///< /done - Mark task as done
-    Cancel,  ///< /cancel - Cancel current operation
+    START,   ///< /start - Initialize bot and user
+    HELP,    ///< /help - Show help message
+    LIST,    ///< /list - Show task list
+    ADD,     ///< /add - Add new task
+    DELETE,  ///< /delete - Delete a task
+    DONE,    ///< /done - Mark task as done
+    CANCEL,  ///< /cancel - Cancel current operation
 };
 
 /**
@@ -25,14 +26,14 @@ enum class SlashCommand : unsigned char {
  */
 class SlashCommandKeyboard final {
  public:
+    SlashCommandKeyboard() = delete;
+
     /**
      * @brief Convert string to SlashCommand enum.
      * @param command_str Command string (without '/')
-     * @return SlashCommand if valid, std::nullopt otherwise
+     * @return SlashCommand if valid, `std::nullopt` otherwise
      */
-    static constexpr auto ParseCommand(std::string_view command_str) noexcept {
-        return magic_enum::enum_cast<SlashCommand>(command_str);
-    }
+    static std::optional<SlashCommand> ParseCommand(std::string_view command_str) noexcept;
 
     /**
      * @brief Get the help text for all available commands.
@@ -48,22 +49,40 @@ class SlashCommandKeyboard final {
     static std::string GetCommandHelp(SlashCommand cmd);
 
     /**
-     * @brief Get the name of a command.
-     * @param cmd The command
-     * @return Command name (without '/')
-     */
-    static constexpr std::string_view GetCommandName(SlashCommand cmd) noexcept {
-        return magic_enum::enum_name(cmd);
-    }
-
-    /**
      * @brief Get the command name with slash prefix.
      * @param cmd The command
      * @return Command with '/' prefix
      */
     static std::string GetCommandWithSlash(SlashCommand cmd);
 
-    SlashCommandKeyboard() = delete;
+ private:
+    /**
+     * @brief Check if string starts with '/'
+     * @param str Input string
+     * @return `true` if string is not empty and starts with '/', `false` otherwise
+     */
+    static bool IsBeginSlash(std::string_view str) noexcept;
+
+    /**
+     * @brief Convert string to uppercase
+     * @param str Input string
+     * @return Uppercase string
+     */
+    static std::string ToUpper(std::string_view str) noexcept;
+
+    /**
+     * @brief Convert string to lowercase
+     * @param str Input string
+     * @return Lowercase string
+     */
+    static std::string ToLower(std::string_view str) noexcept;
+
+    /**
+     * @brief Get the name of a command.
+     * @param cmd The command
+     * @return Command name (without '/')
+     */
+    static std::string GetCommandName(SlashCommand cmd);
 };
 
 }  // namespace bot

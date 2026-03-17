@@ -2,6 +2,7 @@
 
 #include "Bot.hpp"
 #include "Log.hpp"
+#include "magic_enum/magic_enum.hpp"
 #include "SlashCommandKeyboard.hpp"
 
 #include <format>
@@ -27,7 +28,8 @@ void SlashCommandKeyboardHandler::Register(TgBot::Bot& bot) {
     bot.getEvents().onCommand("cancel",
                               [&bot](const Message::Ptr& message) { OnCancel(bot, message); });
 
-    LOG(SlashCommandHandlerLog, INFO, "SlashCommandKeyboardHandler registered with {} commands", 7);
+    LOG(SlashCommandHandlerLog, INFO, "SlashCommandKeyboardHandler registered with {} commands",
+        magic_enum::enum_count<SlashCommand>());
 }
 
 void SlashCommandKeyboardHandler::OnStart(TgBot::Bot& bot, const Message::Ptr& message) {
@@ -35,7 +37,7 @@ void SlashCommandKeyboardHandler::OnStart(TgBot::Bot& bot, const Message::Ptr& m
         "👋 Welcome to Check-List Bot!\n\n"
         "I will help you manage your tasks efficiently.\n\n"
         "Use {} to see all available commands.",
-        SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::Help));
+        SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::HELP));
 
     try {
         bot.getApi().sendMessage(message->chat->id, response);
@@ -97,7 +99,7 @@ void SlashCommandKeyboardHandler::OnDone(TgBot::Bot& bot, const Message::Ptr& me
 void SlashCommandKeyboardHandler::OnCancel(TgBot::Bot& bot, const Message::Ptr& message) {
     const std::string formatted_response =
         std::format("⛔ Operation cancelled. Type {} for help.",
-                    SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::Help));
+                    SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::HELP));
     try {
         bot.getApi().sendMessage(message->chat->id, formatted_response);
         LOG(SlashCommandHandlerLog, DEBUG, "Cancel command executed by user {}", message->from->id);
