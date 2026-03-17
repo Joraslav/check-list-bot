@@ -1,13 +1,17 @@
 #pragma once
 
-#include "SQLiteCpp/SQLiteCpp.h"
-
 #include "DatabaseConnection.hpp"
 #include "StatementManager.hpp"
 
 #include <memory>
+#include <string>
 #include <string_view>
-#include <unordered_map>
+
+namespace SQLite {
+class Database;
+class Statement;
+class Exception;
+}  // namespace SQLite
 
 namespace database {
 

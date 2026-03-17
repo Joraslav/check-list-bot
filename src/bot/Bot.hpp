@@ -1,20 +1,20 @@
 #pragma once
 
 #include "tgbot/Bot.h"
-#include "tgbot/types/Message.h"
-
-#include "TaskDB.hpp"
+#include "tgbot/TgException.h"
 
 #include <filesystem>
 #include <memory>
-#include <string>
 #include <string_view>
+
+namespace database {
+class TaskDB;
+}
 
 namespace bot {
 
 class Bot {
  public:
-    using Message = TgBot::Message;
     using TgException = TgBot::TgException;
 
     Bot(std::string_view token, const std::filesystem::path& db_path);

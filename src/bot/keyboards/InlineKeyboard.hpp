@@ -5,9 +5,11 @@
 
 #include "Task.hpp"
 
+#include <string>
+
 namespace bot {
 
-class InlineKeyboard {
+class InlineKeyboard final {
  public:
     using InlineKeyboardMarkup = TgBot::InlineKeyboardMarkup;
     using InlineKeyboardButton = TgBot::InlineKeyboardButton;

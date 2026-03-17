@@ -1,16 +1,14 @@
 #include "Bot.hpp"
 
-#include "tgbot/tgbot.h"
+#include "tgbot/net/TgLongPoll.h"
 
-#include "handlers/InlineKeyboardHandler.hpp"
-#include "handlers/ReplyKeyboardHandler.hpp"
+#include "InlineKeyboardHandler.hpp"
 #include "Log.hpp"
-#include "magic_enum/magic_enum.hpp"
+#include "ReplyKeyboardHandler.hpp"
+#include "SlashCommandKeyboardHandler.hpp"
 #include "TaskDB.hpp"
 
-#include <format>
-#include <memory>
-#include <string>
+#include <exception>
 
 DEFINE_LOG_CATEGORY_STATIC(BotLog);
 
@@ -26,6 +24,7 @@ Bot::Bot(std::string_view token, const std::filesystem::path& db_path) {
 Bot::~Bot() { LOG(BotLog, INFO, "Bot shutting down"); }
 
 void Bot::SetupHandlers() {
+    SlashCommandKeyboardHandler::Register(*tg_bot_);
     ReplyKeyboardHandler::Register(*tg_bot_);
     InlineKeyboardHandler::Register(*tg_bot_);
 }

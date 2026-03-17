@@ -1,14 +1,13 @@
 #include "TaskDB.hpp"
 
 #include "Log.hpp"
-#include "magic_enum/magic_enum.hpp"
 #include "ScopedStatement.hpp"
-#include "SQL.hpp"
-#include "Utils.hpp"
 
+#include <exception>
 #include <format>
-#include <ranges>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 
 DEFINE_LOG_CATEGORY_STATIC(Console);
 DEFINE_LOG_CATEGORY_STATIC(File);

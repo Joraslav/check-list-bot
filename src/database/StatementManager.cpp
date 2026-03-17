@@ -1,11 +1,15 @@
 #include "StatementManager.hpp"
 
-#include "Log.hpp"
 #include "magic_enum/magic_enum.hpp"
 #include "SQL.hpp"
 #include "Utils.hpp"
 
+#include <array>
+#include <exception>
 #include <format>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 
 namespace database {
 

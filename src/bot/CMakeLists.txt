@@ -12,12 +12,11 @@ add_library(bot STATIC
 target_include_directories(bot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(bot
     PUBLIC
+        tgbot::tgbot
+    PRIVATE
         database
         keyboard
         handler
-        tgbot::tgbot
-    PRIVATE
-        magic_enum::magic_enum
         utils
         log
 )

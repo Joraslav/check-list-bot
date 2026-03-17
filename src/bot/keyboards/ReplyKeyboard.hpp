@@ -1,11 +1,12 @@
 #pragma once
 
+#include "tgbot/types/KeyboardButton.h"
 #include "tgbot/types/ReplyKeyboardMarkup.h"
 #include "tgbot/types/ReplyKeyboardRemove.h"
 
 namespace bot {
 
-class ReplyKeyboard {
+class ReplyKeyboard final {
  public:
     using ReplyKeyboardMarkup = TgBot::ReplyKeyboardMarkup;
     using ReplyKeyboardRemove = TgBot::ReplyKeyboardRemove;

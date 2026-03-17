@@ -5,7 +5,7 @@
 
 namespace bot {
 
-class ReplyKeyboardHandler {
+class ReplyKeyboardHandler final {
  public:
     using Message = TgBot::Message;
 

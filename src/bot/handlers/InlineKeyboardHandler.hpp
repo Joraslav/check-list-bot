@@ -1,11 +1,12 @@
 #pragma once
 
 #include "tgbot/Bot.h"
+#include "tgbot/TgException.h"
 #include "tgbot/types/CallbackQuery.h"
 
 namespace bot {
 
-class InlineKeyboardHandler {
+class InlineKeyboardHandler final {
  public:
     using CallbackQuery = TgBot::CallbackQuery;
     using TgException = TgBot::TgException;
