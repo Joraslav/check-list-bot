@@ -1,6 +1,5 @@
 #include "ReplyKeyboardHandler.hpp"
 
-#include "Bot.hpp"
 #include "Log.hpp"
 #include "SlashCommandKeyboard.hpp"
 #include "SlashCommandKeyboardHandler.hpp"

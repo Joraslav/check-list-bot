@@ -7,14 +7,11 @@ add_library(handler STATIC
 )
 
 target_include_directories(handler PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(handler PUBLIC ${CMAKE_SOURCE_DIR}/src/bot)
-target_include_directories(handler PRIVATE ${CMAKE_SOURCE_DIR}/src/bot/keyboards)
 target_link_libraries(handler
     PUBLIC
-        database
-    PRIVATE
         keyboard
         tgbot::tgbot
+    PRIVATE
         log
         magic_enum::magic_enum
 )

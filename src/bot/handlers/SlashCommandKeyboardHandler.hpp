@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tgbot/Bot.h"
+#include "tgbot/TgException.h"
 #include "tgbot/types/Message.h"
 
 #include "SlashCommandKeyboard.hpp"

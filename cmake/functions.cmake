@@ -1,7 +1,7 @@
 function(FIND_LIB LIB_NAME)
     find_package(${LIB_NAME} QUIET)
     if(NOT ${LIB_NAME}_FOUND)
-        set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/generators)
+        list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/generators)
         find_package(${LIB_NAME} QUIET)
         if(NOT ${LIB_NAME}_FOUND)
             message(FATAL_ERROR "Lib ${LIB_NAME} not found. Execute 'create_env'")

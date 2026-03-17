@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tgbot/Bot.h"
+#include "tgbot/TgException.h"
 #include "tgbot/types/CallbackQuery.h"
 
 namespace bot {

@@ -10,9 +10,9 @@ target_include_directories(keyboard PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(keyboard
     PUBLIC
         database
-        magic_enum::magic_enum
-    PRIVATE
         tgbot::tgbot
+    PRIVATE
+        magic_enum::magic_enum
 )
 
 if(TARGET keyboard)

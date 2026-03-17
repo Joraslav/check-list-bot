@@ -5,6 +5,8 @@
 
 #include "Task.hpp"
 
+#include <string>
+
 namespace bot {
 
 class InlineKeyboard final {

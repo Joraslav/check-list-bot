@@ -1,9 +1,7 @@
 #include "SlashCommandKeyboardHandler.hpp"
 
-#include "Bot.hpp"
 #include "Log.hpp"
 #include "magic_enum/magic_enum.hpp"
-#include "SlashCommandKeyboard.hpp"
 
 #include <format>
 #include <string>

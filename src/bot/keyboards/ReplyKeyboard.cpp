@@ -1,9 +1,8 @@
 #include "ReplyKeyboard.hpp"
 
-#include "tgbot/types/ReplyKeyboardRemove.h"
-
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace bot {
 

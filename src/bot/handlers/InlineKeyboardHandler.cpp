@@ -1,6 +1,5 @@
 #include "InlineKeyboardHandler.hpp"
 
-#include "Bot.hpp"
 #include "Log.hpp"
 
 #include <charconv>

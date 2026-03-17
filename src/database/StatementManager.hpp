@@ -2,8 +2,6 @@
 
 #include "SQLiteCpp/SQLiteCpp.h"
 
-#include "DatabaseConnection.hpp"
-
 #include <memory>
 #include <unordered_map>
 

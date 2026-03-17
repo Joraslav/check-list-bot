@@ -3,6 +3,7 @@
 #include "spdlog/spdlog.h"
 
 #include <concepts>
+#include <format>
 #include <memory>
 #include <string>
 #include <string_view>

@@ -1,17 +1,14 @@
 #include "Bot.hpp"
 
-#include "tgbot/tgbot.h"
+#include "tgbot/net/TgLongPoll.h"
 
-#include "handlers/InlineKeyboardHandler.hpp"
-#include "handlers/ReplyKeyboardHandler.hpp"
-#include "handlers/SlashCommandKeyboardHandler.hpp"
+#include "InlineKeyboardHandler.hpp"
 #include "Log.hpp"
-#include "magic_enum/magic_enum.hpp"
+#include "ReplyKeyboardHandler.hpp"
+#include "SlashCommandKeyboardHandler.hpp"
 #include "TaskDB.hpp"
 
-#include <format>
-#include <memory>
-#include <string>
+#include <exception>
 
 DEFINE_LOG_CATEGORY_STATIC(BotLog);
 

@@ -8,6 +8,16 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(ENABLE_CCACHE "Use ccache to speed up C/C++ rebuilds" ON)
+if(ENABLE_CCACHE)
+    find_program(CCACHE_PROGRAM ccache)
+    if(CCACHE_PROGRAM)
+        set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+        set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+        message(STATUS "ccache enabled: ${CCACHE_PROGRAM}")
+    endif()
+endif()
+
 add_compile_options(
     -Wall
     -Wextra
