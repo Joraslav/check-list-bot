@@ -3,6 +3,8 @@
 #include "tgbot/Bot.h"
 #include "tgbot/types/Message.h"
 
+#include "SlashCommandKeyboard.hpp"
+
 namespace bot {
 
 class SlashCommandKeyboardHandler final {
@@ -15,6 +17,14 @@ class SlashCommandKeyboardHandler final {
      * @param bot Reference to TgBot::Bot
      */
     static void Register(TgBot::Bot& bot);
+
+    /**
+     * @brief Handle command action by enum value.
+     * @param bot Reference to TgBot::Bot
+     * @param message Incoming message
+     * @param command Parsed command
+     */
+    static void HandleCommand(TgBot::Bot& bot, const Message::Ptr& message, SlashCommand command);
 
  private:
     /**

@@ -14,22 +14,58 @@ namespace bot {
 
 void SlashCommandKeyboardHandler::Register(TgBot::Bot& bot) {
     // Register all slash command handlers
-    bot.getEvents().onCommand("start",
-                              [&bot](const Message::Ptr& message) { OnStart(bot, message); });
-    bot.getEvents().onCommand("help",
-                              [&bot](const Message::Ptr& message) { OnHelp(bot, message); });
-    bot.getEvents().onCommand("list",
-                              [&bot](const Message::Ptr& message) { OnList(bot, message); });
-    bot.getEvents().onCommand("add", [&bot](const Message::Ptr& message) { OnAdd(bot, message); });
-    bot.getEvents().onCommand("delete",
-                              [&bot](const Message::Ptr& message) { OnDelete(bot, message); });
-    bot.getEvents().onCommand("done",
-                              [&bot](const Message::Ptr& message) { OnDone(bot, message); });
-    bot.getEvents().onCommand("cancel",
-                              [&bot](const Message::Ptr& message) { OnCancel(bot, message); });
+    bot.getEvents().onCommand(
+        SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::START),
+        [&bot](const Message::Ptr& message) { HandleCommand(bot, message, SlashCommand::START); });
+    bot.getEvents().onCommand(
+        SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::HELP),
+        [&bot](const Message::Ptr& message) { HandleCommand(bot, message, SlashCommand::HELP); });
+    bot.getEvents().onCommand(
+        SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::LIST),
+        [&bot](const Message::Ptr& message) { HandleCommand(bot, message, SlashCommand::LIST); });
+    bot.getEvents().onCommand(
+        SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::ADD),
+        [&bot](const Message::Ptr& message) { HandleCommand(bot, message, SlashCommand::ADD); });
+    bot.getEvents().onCommand(
+        SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::DELETE),
+        [&bot](const Message::Ptr& message) { HandleCommand(bot, message, SlashCommand::DELETE); });
+    bot.getEvents().onCommand(
+        SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::DONE),
+        [&bot](const Message::Ptr& message) { HandleCommand(bot, message, SlashCommand::DONE); });
+    bot.getEvents().onCommand(
+        SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::CANCEL),
+        [&bot](const Message::Ptr& message) { HandleCommand(bot, message, SlashCommand::CANCEL); });
 
     LOG(SlashCommandHandlerLog, INFO, "SlashCommandKeyboardHandler registered with {} commands",
         magic_enum::enum_count<SlashCommand>());
+}
+
+void SlashCommandKeyboardHandler::HandleCommand(TgBot::Bot& bot, const Message::Ptr& message,
+                                                SlashCommand command) {
+    using enum SlashCommand;
+    switch (command) {
+        case START:
+            OnStart(bot, message);
+            break;
+        case HELP:
+            OnHelp(bot, message);
+            break;
+        case LIST:
+            OnList(bot, message);
+            break;
+        case ADD:
+            OnAdd(bot, message);
+            break;
+        case DELETE:
+            OnDelete(bot, message);
+            break;
+        case DONE:
+            OnDone(bot, message);
+            break;
+        case CANCEL:
+            OnCancel(bot, message);
+            break;
+    }
 }
 
 void SlashCommandKeyboardHandler::OnStart(TgBot::Bot& bot, const Message::Ptr& message) {

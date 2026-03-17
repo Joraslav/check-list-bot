@@ -5,7 +5,7 @@
 
 namespace bot {
 
-bool SlashCommandKeyboard::IsBeginSlash(std::string_view str) noexcept {
+bool SlashCommandKeyboard::StartsWithSlash(std::string_view str) noexcept {
     return !str.empty() && str.front() == '/';
 }
 
@@ -31,7 +31,7 @@ std::string SlashCommandKeyboard::GetCommandName(SlashCommand cmd) {
 
 std::optional<SlashCommand> SlashCommandKeyboard::ParseCommand(
     std::string_view command_str) noexcept {
-    if (IsBeginSlash(command_str)) {
+    if (StartsWithSlash(command_str)) {
         command_str.remove_prefix(1);
     }
     const std::string upper_command = ToUpper(command_str);

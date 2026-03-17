@@ -30,7 +30,7 @@ class SlashCommandKeyboard final {
 
     /**
      * @brief Convert string to SlashCommand enum.
-     * @param command_str Command string (without '/')
+     * @param command_str Command string, optionally starting with '/'
      * @return SlashCommand if valid, `std::nullopt` otherwise
      */
     static std::optional<SlashCommand> ParseCommand(std::string_view command_str) noexcept;
@@ -61,7 +61,7 @@ class SlashCommandKeyboard final {
      * @param str Input string
      * @return `true` if string is not empty and starts with '/', `false` otherwise
      */
-    static bool IsBeginSlash(std::string_view str) noexcept;
+    static bool StartsWithSlash(std::string_view str) noexcept;
 
     /**
      * @brief Convert string to uppercase
