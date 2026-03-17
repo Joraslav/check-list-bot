@@ -5,7 +5,7 @@
 
 namespace bot {
 
-class ReplyKeyboard {
+class ReplyKeyboard final {
  public:
     using ReplyKeyboardMarkup = TgBot::ReplyKeyboardMarkup;
     using ReplyKeyboardRemove = TgBot::ReplyKeyboardRemove;

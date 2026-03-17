@@ -5,7 +5,7 @@
 
 namespace bot {
 
-class InlineKeyboardHandler {
+class InlineKeyboardHandler final {
  public:
     using CallbackQuery = TgBot::CallbackQuery;
     using TgException = TgBot::TgException;

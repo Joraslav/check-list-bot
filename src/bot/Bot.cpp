@@ -4,6 +4,7 @@
 
 #include "handlers/InlineKeyboardHandler.hpp"
 #include "handlers/ReplyKeyboardHandler.hpp"
+#include "handlers/SlashCommandKeyboardHandler.hpp"
 #include "Log.hpp"
 #include "magic_enum/magic_enum.hpp"
 #include "TaskDB.hpp"
@@ -26,6 +27,7 @@ Bot::Bot(std::string_view token, const std::filesystem::path& db_path) {
 Bot::~Bot() { LOG(BotLog, INFO, "Bot shutting down"); }
 
 void Bot::SetupHandlers() {
+    SlashCommandKeyboardHandler::Register(*tg_bot_);
     ReplyKeyboardHandler::Register(*tg_bot_);
     InlineKeyboardHandler::Register(*tg_bot_);
 }

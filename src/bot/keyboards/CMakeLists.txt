@@ -12,6 +12,7 @@ target_link_libraries(keyboard
         database
     PRIVATE
         tgbot::tgbot
+        magic_enum::magic_enum
 )
 
 if(TARGET keyboard)
