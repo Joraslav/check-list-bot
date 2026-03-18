@@ -72,6 +72,10 @@ CMakeUserPresets.json
 # Out directory
 out/
 
+# Scripts
+scripts/fix_style.sh
+scripts/clean.sh
+
 # test output & cache
 Testing/
 .cache/
