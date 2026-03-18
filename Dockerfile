@@ -10,7 +10,8 @@ RUN apt-get update && \
     python3 \
     python3-pip \
     python3-venv \
-    curl
+    curl \
+    clang-tidy
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH="/root/.local/bin:$PATH"
@@ -30,7 +31,8 @@ RUN poetry run conan install . --build=missing -pr:h profiles/Release -pr:b prof
 COPY . /app/
 
 RUN poetry run cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 RUN poetry run cmake --build build --config Release
 
 CMD ["./build/check-list-bot"]
