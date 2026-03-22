@@ -5,6 +5,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace database {
@@ -13,8 +14,6 @@ namespace database {
  * @brief Interface for database connection
  */
 class DatabaseConnection {
- protected:
-    mutable std::mutex db_mutex_;  ///< Mutex for thread safety
  public:
     DatabaseConnection() = default;
 
@@ -22,6 +21,14 @@ class DatabaseConnection {
 
     DatabaseConnection(const DatabaseConnection&) = delete;
     DatabaseConnection& operator=(const DatabaseConnection&) = delete;
+
+    /**
+     * @brief Add user to database
+     * @param user_id ID user in database
+     * @param user_name Name of user
+     * @throw `std::runtime_error` if user is not added
+     */
+    virtual void AddUser(int64_t user_id, const std::string& user_name) = 0;
 
     /**
      * @brief Checks the connection to the database
@@ -109,6 +116,15 @@ class DatabaseConnection {
      * @brief Rollback transaction
      */
     virtual void RollbackTransaction() = 0;
+
+ protected:
+    /**
+     * @brief Accessor for database mutex in derived classes
+     */
+    std::recursive_mutex& DbMutex() noexcept { return db_mutex_; }
+
+ private:
+    mutable std::recursive_mutex db_mutex_;  ///< Mutex for thread safety
 };
 
 }  // namespace database

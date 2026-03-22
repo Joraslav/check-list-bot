@@ -4,6 +4,7 @@
 #include "StatementManager.hpp"
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 
@@ -36,12 +37,45 @@ class TaskDB final : public DatabaseConnection {
     TaskDB(const TaskDB&) = delete;
     TaskDB& operator=(const TaskDB&) = delete;
 
+    class TransactionGuard final {
+     public:
+        explicit TransactionGuard(TaskDB& task_db);
+        ~TransactionGuard() noexcept;
+
+        TransactionGuard(const TransactionGuard&) = delete;
+        TransactionGuard& operator=(const TransactionGuard&) = delete;
+        TransactionGuard(TransactionGuard&&) noexcept = default;
+        TransactionGuard& operator=(TransactionGuard&&) noexcept = default;
+
+        void Commit();
+        void Rollback();
+        [[nodiscard]] bool IsActive() const noexcept;
+
+     private:
+        TaskDB* task_db_ = nullptr;
+        std::unique_lock<std::recursive_mutex> lock_;
+        bool active_ = false;
+    };
+
+    /**
+     * @brief Create RAII guard for atomic transaction in multithreaded scenario
+     */
+    [[nodiscard]] TransactionGuard CreateTransactionGuard();
+
     /**
      * @brief Check existing user in database
      * @param user_id ID user in database
      * @return `True` is user exist, `False` if don`t
      */
     bool IsUserExist(int64_t user_id);
+
+    /**
+     * @brief Add user to database
+     * @param user_id ID user in database
+     * @param user_name Name of user
+     * @throw `std::runtime_error` if user is not added
+     */
+    void AddUser(int64_t user_id, const std::string& user_name) override;
 
     /**
      * @brief Checks the connection to the database
@@ -54,7 +88,7 @@ class TaskDB final : public DatabaseConnection {
      * @param user_id ID user in database
      * @param text Text of task
      * @param status Status of task. Default is ACTIVE
-     * @return `int64_t` - The ID of the created task or message error
+     * @return `int64_t` - The ID of the created task
      * @throw `std::runtime_error` if task is not added
      */
     int64_t AddTask(int64_t user_id, const std::string& text,

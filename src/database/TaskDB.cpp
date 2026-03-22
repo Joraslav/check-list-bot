@@ -21,7 +21,8 @@ void TaskDB::InitializeSchema() {
     const std::string schema = R"(
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER UNIQUE NOT NULL
+            user_id INTEGER UNIQUE NOT NULL,
+            user_name TEXT NOT NULL DEFAULT ''
         );
         
         CREATE TABLE IF NOT EXISTS tasks (
@@ -61,8 +62,64 @@ TaskDB::TaskDB(std::string_view db_path) : db_path_(db_path) {
     }
 }
 
+TaskDB::TransactionGuard::TransactionGuard(TaskDB& task_db)
+    : task_db_(&task_db), lock_(task_db.DbMutex()) {
+    try {
+        task_db_->db_->exec("BEGIN IMMEDIATE TRANSACTION");
+        active_ = true;
+    } catch (const Exception& e) {
+        throw std::runtime_error(std::format("Failed to begin transaction: {}", e.what()));
+    }
+}
+
+TaskDB::TransactionGuard::~TransactionGuard() noexcept {
+    if (!active_ || task_db_ == nullptr) {
+        return;
+    }
+
+    try {
+        task_db_->db_->exec("ROLLBACK");
+    } catch (...) {
+    }
+    active_ = false;
+}
+
+void TaskDB::TransactionGuard::Commit() {
+    if (!active_ || task_db_ == nullptr) {
+        throw std::logic_error("Transaction already finished");
+    }
+
+    try {
+        task_db_->db_->exec("COMMIT");
+        active_ = false;
+        task_db_ = nullptr;
+        lock_.unlock();
+    } catch (const Exception& e) {
+        throw std::runtime_error(std::format("Failed to commit transaction: {}", e.what()));
+    }
+}
+
+void TaskDB::TransactionGuard::Rollback() {
+    if (!active_ || task_db_ == nullptr) {
+        return;
+    }
+
+    try {
+        task_db_->db_->exec("ROLLBACK");
+        active_ = false;
+        task_db_ = nullptr;
+        lock_.unlock();
+    } catch (const Exception& e) {
+        throw std::runtime_error(std::format("Failed to rollback transaction: {}", e.what()));
+    }
+}
+
+bool TaskDB::TransactionGuard::IsActive() const noexcept { return active_; }
+
+TaskDB::TransactionGuard TaskDB::CreateTransactionGuard() { return TransactionGuard(*this); }
+
 bool TaskDB::IsUserExist(int64_t user_id) {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::SELECT_IS_USER_EXIST));
     try {
         stmt->bind(1, user_id);
@@ -76,8 +133,23 @@ bool TaskDB::IsUserExist(int64_t user_id) {
     }
 }
 
+void TaskDB::AddUser(int64_t user_id, const std::string& user_name) {
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    ScopedStatement stmt(statement_manager_->Get(StatementType::INSERT_USER));
+
+    try {
+        stmt->bind(1, user_id);
+        stmt->bindNoCopy(2, user_name);
+        stmt->exec();
+    } catch (const Exception& e) {
+        throw std::runtime_error("SQL error in AddUser: "s.append(e.what()));
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Error in AddUser function: "s.append(e.what()));
+    }
+}
+
 int64_t TaskDB::AddTask(int64_t user_id, const std::string& text, TaskStatus status) {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::INSERT_TASK));
 
     try {
@@ -99,7 +171,7 @@ int64_t TaskDB::AddTask(int64_t user_id, const std::string& text, TaskStatus sta
 }
 
 std::optional<TaskList> TaskDB::GetAllTasks(int64_t user_id) {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::SELECT_TASKS_ALL));
 
     try {
@@ -125,7 +197,7 @@ std::optional<TaskList> TaskDB::GetAllTasks(int64_t user_id) {
 }
 
 std::optional<TaskList> TaskDB::GetActiveOrCompletedTasks(int64_t user_id, TaskStatus status) {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::SELECT_TASKS_BY_STATUS));
 
     try {
@@ -153,7 +225,7 @@ std::optional<TaskList> TaskDB::GetActiveOrCompletedTasks(int64_t user_id, TaskS
 }
 
 TaskStatistics TaskDB::GetUserStatistics(int64_t user_id) {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::GET_USER_STATISTICS));
     try {
         stmt->bind(1, user_id);
@@ -172,7 +244,7 @@ TaskStatistics TaskDB::GetUserStatistics(int64_t user_id) {
 }
 
 void TaskDB::UpdateTaskStatus(int64_t user_id, int64_t task_id, TaskStatus new_status) {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::UPDATE_STATUS));
 
     try {
@@ -189,7 +261,7 @@ void TaskDB::UpdateTaskStatus(int64_t user_id, int64_t task_id, TaskStatus new_s
 }
 
 void TaskDB::EditTask(int64_t user_id, int64_t task_id, const std::string& new_text) {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement edit_stmt(statement_manager_->Get(StatementType::EDIT_TASK));
 
     try {
@@ -211,7 +283,7 @@ void TaskDB::EditTask(int64_t user_id, int64_t task_id, const std::string& new_t
 }
 
 void TaskDB::DeleteTask(int64_t user_id, int64_t task_id) {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement delete_stmt(statement_manager_->Get(StatementType::DELETE_TASK));
 
     try {
@@ -232,7 +304,7 @@ void TaskDB::DeleteTask(int64_t user_id, int64_t task_id) {
 }
 
 void TaskDB::DeleteAllUserTasks(int64_t user_id) {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::DELETE_ALL_USER_TASKS));
 
     try {
@@ -247,22 +319,22 @@ void TaskDB::DeleteAllUserTasks(int64_t user_id) {
 }
 
 bool TaskDB::IsConnected() noexcept {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     return db_ != nullptr;
 }
 
 void TaskDB::BeginTransaction() {
-    std::lock_guard<std::mutex> lock(db_mutex_);
-    db_->exec("BEGIN TRANSACTION");
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    db_->exec("BEGIN IMMEDIATE TRANSACTION");
 }
 
 void TaskDB::CommitTransaction() {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     db_->exec("COMMIT");
 }
 
 void TaskDB::RollbackTransaction() {
-    std::lock_guard<std::mutex> lock(db_mutex_);
+    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     db_->exec("ROLLBACK");
 }
 

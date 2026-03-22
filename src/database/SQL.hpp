@@ -26,8 +26,13 @@ class SQL {
     }
 
  private:
+    /**
+     * @brief Insert new user to `users` table
+     * @param user_id ID user in database
+     * @param user_name Name of user
+     */
     static constexpr std::string_view INSERT_USER =
-        R"(INSERT INTO users (user_id) VALUES (?))";
+        R"(INSERT INTO users (user_id, user_name) VALUES (?, ?))" ;
 
     static constexpr std::string_view INSERT_TASK =
         R"(INSERT INTO tasks (user_id, text, status) VALUES (?, ?, ?) RETURNING id)";
