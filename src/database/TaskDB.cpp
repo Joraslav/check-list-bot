@@ -48,8 +48,9 @@ TaskDB::TaskDB() : TaskDB(":memory:") {}
 
 TaskDB::TaskDB(std::string_view db_path) : db_path_(db_path) {
     try {
-        db_ = std::make_unique<Database>(
-            db_path_.c_str(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE | SQLite::OPEN_FULLMUTEX);
+        db_ = std::make_unique<Database>(db_path_.c_str(), SQLite::OPEN_READWRITE |
+                                                               SQLite::OPEN_CREATE |
+                                                               SQLite::OPEN_FULLMUTEX);
 
         db_->exec("PRAGMA foreign_keys = ON"s);
         db_->exec("PRAGMA journal_mode = WAL"s);
