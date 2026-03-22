@@ -89,7 +89,8 @@ class TaskDB final : public DatabaseConnection {
      * @param user_id ID user in database
      * @param text Text of task
      * @param status Status of task. Default is ACTIVE
-     * @return `std::optional<int64_t>` - The ID of the created task, or `std::nullopt` if the task was not added
+     * @return `std::optional<int64_t>` - The ID of the created task, or `std::nullopt` if the task
+     * was not added
      */
     std::optional<int64_t> AddTask(int64_t user_id, const std::string& text,
                                    TaskStatus status = TaskStatus::ACTIVE) override;
