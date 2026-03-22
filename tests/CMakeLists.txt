@@ -42,9 +42,7 @@ foreach(test_source ${TEST_SOURCES})
     )
     
     # Register test
-    gtest_discover_tests(${test_name}
-        TEST_PREFIX "${test_name}."
-    )
+    gtest_discover_tests(${test_name})
 endforeach()
 
 message(STATUS "Tests configured: ${TEST_SOURCES}")

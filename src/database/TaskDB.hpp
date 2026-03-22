@@ -66,7 +66,7 @@ class TaskDB final : public DatabaseConnection {
     /**
      * @brief Check existing user in database
      * @param user_id ID user in database
-     * @return `True` is user exist, `False` if don`t
+     * @return `True` if user exists, `False` otherwise
      */
     bool IsUserExist(int64_t user_id);
 
@@ -75,12 +75,13 @@ class TaskDB final : public DatabaseConnection {
      * @param user_id ID user in database
      * @param user_name Name of user
      * @throw `std::runtime_error` if user is not added
+     * @exception_safety Strong guarantee: if an exception is thrown, database state is unchanged
      */
     void AddUser(int64_t user_id, const std::string& user_name) override;
 
     /**
      * @brief Checks the connection to the database
-     * @return `True` if connetion is established, `False` is not established
+     * @return `True` if connection is established, `False` otherwise
      */
     bool IsConnected() noexcept override;
 
@@ -91,6 +92,7 @@ class TaskDB final : public DatabaseConnection {
      * @param status Status of task. Default is ACTIVE
      * @return `std::optional<int64_t>` - The ID of the created task, or `std::nullopt` if the task
      * was not added
+     * @exception_safety Strong guarantee: if an exception is thrown, database state is unchanged
      */
     std::optional<int64_t> AddTask(int64_t user_id, const std::string& text,
                                    TaskStatus status = TaskStatus::ACTIVE) override;
@@ -122,6 +124,7 @@ class TaskDB final : public DatabaseConnection {
      * @param user_id ID user in database (to verify ownership)
      * @param task_id ID task in database
      * @param new_status New task status
+     * @exception_safety Strong guarantee: if an exception is thrown, database state is unchanged
      */
     void UpdateTaskStatus(int64_t user_id, int64_t task_id, TaskStatus new_status) override;
 
@@ -130,6 +133,7 @@ class TaskDB final : public DatabaseConnection {
      * @param user_id ID user in database (to verify ownership)
      * @param task_id ID task in database
      * @param new_text New task text
+     * @exception_safety Strong guarantee: if an exception is thrown, database state is unchanged
      */
     void EditTask(int64_t user_id, int64_t task_id, const std::string& new_text) override;
 
@@ -137,6 +141,7 @@ class TaskDB final : public DatabaseConnection {
      * @brief Delete task from database
      * @param user_id ID user in database (to verify ownership)
      * @param task_id ID task in database
+     * @exception_safety Strong guarantee: if an exception is thrown, database state is unchanged
      * @warning The operation is irreversible!
      */
     void DeleteTask(int64_t user_id, int64_t task_id) override;
@@ -144,25 +149,25 @@ class TaskDB final : public DatabaseConnection {
     /**
      * @brief Delete all users tasks
      * @param user_id ID user in database
+     * @exception_safety Strong guarantee: if an exception is thrown, database state is unchanged
      * @warning The operation is irreversible!
      */
     void DeleteAllUserTasks(int64_t user_id) override;
 
     /**
-     * @brief Begin transaction
-     * @warning The operation is irreversible
+     * @brief Begin manual transaction
      */
-    void BeginTransaction() override;
+    void BeginTransaction();
 
     /**
-     * @brief Commit transaction
+     * @brief Commit manual transaction
      */
-    void CommitTransaction() override;
+    void CommitTransaction();
 
     /**
-     * @brief Rollback transaction
+     * @brief Rollback manual transaction
      */
-    void RollbackTransaction() override;
+    void RollbackTransaction();
 
  private:
     /**
@@ -185,6 +190,11 @@ class TaskDB final : public DatabaseConnection {
      * invoked whenever the database is opened
      */
     void InitializeSchema();
+
+    /**
+     * @brief Manual transaction state for Begin/Commit/Rollback API.
+     */
+    bool manual_transaction_active_ = false;
 };
 
 }  // namespace database

@@ -26,6 +26,10 @@ void ScopedStatement::Reset() noexcept {
         try {
             stmt_->reset();
         } catch (...) {
+            // Intentionally ignore exceptions: cleanup code in a noexcept function
+            // cannot propagate exceptions, so we continue with cleanup anyway.
+            constexpr bool ignored_exception = true;
+            static_cast<void>(ignored_exception);
         }
     }
     owns_ = false;

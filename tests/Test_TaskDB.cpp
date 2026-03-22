@@ -2,6 +2,7 @@
 
 #include "TaskDB.hpp"
 
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -21,17 +22,29 @@ class TaskDBTest : public ::testing::Test {
 
     void AddDefaultUser() { db.AddUser(kUserId, std::string(kDefaultUserName)); }
 
-    int64_t AddTaskForDefaultUser(std::string_view text,
-                                  TaskStatus status = TaskStatus::ACTIVE) {
-        const auto id = db.AddTask(kUserId, std::string(text), status);
-        EXPECT_TRUE(id.has_value());
-        return id.value_or(-1);
+    int64_t AddTaskForUser(int64_t user_id, std::string_view text,
+                           TaskStatus status = TaskStatus::ACTIVE) {
+        db.BeginTransaction();
+        try {
+            const auto id = db.AddTask(user_id, std::string(text), status);
+            EXPECT_TRUE(id.has_value());
+            db.CommitTransaction();
+            return id.value_or(-1);
+        } catch (...) {
+            try {
+                db.RollbackTransaction();
+            } catch (...) {
+            }
+            throw;
+        }
+    }
+
+    int64_t AddTaskForDefaultUser(std::string_view text, TaskStatus status = TaskStatus::ACTIVE) {
+        return AddTaskForUser(kUserId, text, status);
     }
 };
 
-TEST_F(TaskDBTest, IsConnected_Returns_True_After_Construction) {
-    EXPECT_TRUE(db.IsConnected());
-}
+TEST_F(TaskDBTest, IsConnected_Returns_True_After_Construction) { EXPECT_TRUE(db.IsConnected()); }
 
 TEST_F(TaskDBTest, IsUserExist_Returns_False_For_Unknown_User) {
     EXPECT_FALSE(db.IsUserExist(kUserId));
@@ -48,18 +61,15 @@ TEST_F(TaskDBTest, AddUser_Throws_For_Duplicate_User_Id) {
 }
 
 TEST_F(TaskDBTest, AddTask_Throws_When_Owner_User_Does_Not_Exist) {
-    EXPECT_THROW(static_cast<void>(db.AddTask(kUserId, "task without owner"s)),
-                 std::runtime_error);
+    EXPECT_THROW(static_cast<void>(db.AddTask(kUserId, "task without owner"s)), std::runtime_error);
 }
 
 TEST_F(TaskDBTest, AddTask_Returns_Created_Task_Id) {
     AddDefaultUser();
-    const auto first_task_id = db.AddTask(kUserId, "first"s);
-    const auto second_task_id = db.AddTask(kUserId, "second"s);
+    const int64_t first_task_id = AddTaskForDefaultUser("first"sv, TaskStatus::ACTIVE);
+    const int64_t second_task_id = AddTaskForDefaultUser("second"sv, TaskStatus::ACTIVE);
 
-    ASSERT_TRUE(first_task_id.has_value());
-    ASSERT_TRUE(second_task_id.has_value());
-    EXPECT_LT(*first_task_id, *second_task_id);
+    EXPECT_LT(first_task_id, second_task_id);
 }
 
 TEST_F(TaskDBTest, GetAllTasks_Returns_Nullopt_For_User_Without_Tasks) {
@@ -138,11 +148,10 @@ TEST_F(TaskDBTest, UpdateTaskStatus_Changes_Only_Owner_Task) {
     AddDefaultUser();
     db.AddUser(kOtherUserId, "bob"s);
     const int64_t own_task = AddTaskForDefaultUser("own"sv, TaskStatus::ACTIVE);
-    const auto other_task_opt = db.AddTask(kOtherUserId, "other"s, TaskStatus::ACTIVE);
-    ASSERT_TRUE(other_task_opt.has_value());
+    const int64_t other_task = AddTaskForUser(kOtherUserId, "other"sv, TaskStatus::ACTIVE);
 
     db.UpdateTaskStatus(kUserId, own_task, TaskStatus::COMPLETED);
-    db.UpdateTaskStatus(kUserId, *other_task_opt, TaskStatus::COMPLETED);
+    db.UpdateTaskStatus(kUserId, other_task, TaskStatus::COMPLETED);
 
     const auto own_tasks = db.GetAllTasks(kUserId);
     const auto other_tasks = db.GetAllTasks(kOtherUserId);
@@ -193,10 +202,9 @@ TEST_F(TaskDBTest, EditTask_Throws_For_Missing_Task) {
 TEST_F(TaskDBTest, EditTask_Throws_For_Foreign_Task_Ownership) {
     AddDefaultUser();
     db.AddUser(kOtherUserId, "bob"s);
-    const auto foreign_task = db.AddTask(kOtherUserId, "bob-task"s, TaskStatus::ACTIVE);
-    ASSERT_TRUE(foreign_task.has_value());
+    const int64_t foreign_task = AddTaskForUser(kOtherUserId, "bob-task"sv, TaskStatus::ACTIVE);
 
-    EXPECT_THROW(db.EditTask(kUserId, *foreign_task, "hack"s), std::runtime_error);
+    EXPECT_THROW(db.EditTask(kUserId, foreign_task, "hack"s), std::runtime_error);
 }
 
 TEST_F(TaskDBTest, DeleteTask_Removes_Existing_Task) {
@@ -217,10 +225,9 @@ TEST_F(TaskDBTest, DeleteTask_Throws_For_Missing_Task) {
 TEST_F(TaskDBTest, DeleteTask_Throws_For_Foreign_Task_Ownership) {
     AddDefaultUser();
     db.AddUser(kOtherUserId, "bob"s);
-    const auto foreign_task = db.AddTask(kOtherUserId, "foreign"s, TaskStatus::ACTIVE);
-    ASSERT_TRUE(foreign_task.has_value());
+    const int64_t foreign_task = AddTaskForUser(kOtherUserId, "foreign"sv, TaskStatus::ACTIVE);
 
-    EXPECT_THROW(db.DeleteTask(kUserId, *foreign_task), std::runtime_error);
+    EXPECT_THROW(db.DeleteTask(kUserId, foreign_task), std::runtime_error);
 }
 
 TEST_F(TaskDBTest, DeleteAllUserTasks_Removes_Only_Specified_Users_Tasks) {
@@ -228,8 +235,7 @@ TEST_F(TaskDBTest, DeleteAllUserTasks_Removes_Only_Specified_Users_Tasks) {
     db.AddUser(kOtherUserId, "bob"s);
     AddTaskForDefaultUser("a"sv, TaskStatus::ACTIVE);
     AddTaskForDefaultUser("b"sv, TaskStatus::COMPLETED);
-    const auto other_task = db.AddTask(kOtherUserId, "bob-task"s, TaskStatus::ACTIVE);
-    ASSERT_TRUE(other_task.has_value());
+    static_cast<void>(AddTaskForUser(kOtherUserId, "bob-task"sv, TaskStatus::ACTIVE));
 
     db.DeleteAllUserTasks(kUserId);
 
@@ -263,6 +269,41 @@ TEST_F(TaskDBTest, Begin_RollbackTransaction_Reverts_Changes) {
 
     EXPECT_FALSE(db.IsUserExist(kUserId));
     EXPECT_FALSE(db.GetAllTasks(kUserId).has_value());
+}
+
+TEST_F(TaskDBTest, BeginTransaction_Throws_When_Already_Active) {
+    db.BeginTransaction();
+
+    EXPECT_THROW(db.BeginTransaction(), std::logic_error);
+
+    db.RollbackTransaction();
+}
+
+TEST_F(TaskDBTest, CommitTransaction_Throws_Without_Active_Transaction) {
+    EXPECT_THROW(db.CommitTransaction(), std::logic_error);
+}
+
+TEST_F(TaskDBTest, RollbackTransaction_Throws_Without_Active_Transaction) {
+    EXPECT_THROW(db.RollbackTransaction(), std::logic_error);
+}
+
+TEST_F(TaskDBTest, CreateTransactionGuard_Throws_Inside_ManualTransaction) {
+    db.BeginTransaction();
+
+    EXPECT_THROW(static_cast<void>(db.CreateTransactionGuard()), std::runtime_error);
+
+    db.RollbackTransaction();
+}
+
+TEST_F(TaskDBTest, RollbackTransaction_Reverts_Changes_After_Error_In_Transaction) {
+    db.BeginTransaction();
+    db.AddUser(kUserId, "alice"s);
+
+    EXPECT_THROW(db.AddUser(kUserId, "alice-duplicate"s), std::runtime_error);
+
+    db.RollbackTransaction();
+
+    EXPECT_FALSE(db.IsUserExist(kUserId));
 }
 
 }  // namespace
