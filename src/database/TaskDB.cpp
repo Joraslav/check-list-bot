@@ -17,52 +17,6 @@ namespace database {
 using std::string_literals::operator""s;
 using std::string_view_literals::operator""sv;
 
-void TaskDB::InitializeSchema() {
-    const std::string schema = R"(
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER UNIQUE NOT NULL,
-            user_name TEXT NOT NULL DEFAULT ''
-        );
-        
-        CREATE TABLE IF NOT EXISTS tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            text TEXT NOT NULL,
-            status INTEGER NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-        );
-        
-        CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
-        CREATE INDEX IF NOT EXISTS idx_tasks_user_status ON tasks(user_id, status);
-    )";
-    try {
-        db_->exec(schema);
-    } catch (const Exception& e) {
-        throw std::runtime_error(std::format("Failed to initialize database schema: {}", e.what()));
-    }
-}
-
-TaskDB::TaskDB() : TaskDB(":memory:") {}
-
-TaskDB::TaskDB(std::string_view db_path) : db_path_(db_path) {
-    try {
-        db_ = std::make_unique<Database>(db_path_.c_str(), SQLite::OPEN_READWRITE |
-                                                               SQLite::OPEN_CREATE |
-                                                               SQLite::OPEN_FULLMUTEX);
-
-        db_->exec("PRAGMA foreign_keys = ON"s);
-        db_->exec("PRAGMA journal_mode = WAL"s);
-        InitializeSchema();
-        statement_manager_ = std::make_unique<StatementManager>(*db_);
-    } catch (const Exception& e) {
-        throw std::runtime_error(std::format("Failed to configure database: {}", e.what()));
-    } catch (const std::runtime_error& e) {
-        throw std::runtime_error(std::format("Failed to initialize database: {}", e.what()));
-    }
-}
-
 TaskDB::TransactionGuard::TransactionGuard(TaskDB& task_db)
     : task_db_(&task_db), lock_(task_db.DbMutex()) {
     try {
@@ -145,6 +99,52 @@ void TaskDB::TransactionGuard::Rollback() {
 bool TaskDB::TransactionGuard::IsActive() const noexcept { return active_; }
 
 TaskDB::TransactionGuard TaskDB::CreateTransactionGuard() { return TransactionGuard(*this); }
+
+void TaskDB::InitializeSchema() {
+    const std::string schema = R"(
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            user_name TEXT NOT NULL DEFAULT ''
+        );
+        
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            text TEXT NOT NULL,
+            status INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
+        CREATE INDEX IF NOT EXISTS idx_tasks_user_status ON tasks(user_id, status);
+    )";
+    try {
+        db_->exec(schema);
+    } catch (const Exception& e) {
+        throw std::runtime_error(std::format("Failed to initialize database schema: {}", e.what()));
+    }
+}
+
+TaskDB::TaskDB() : TaskDB(":memory:") {}
+
+TaskDB::TaskDB(std::string_view db_path) : db_path_(db_path) {
+    try {
+        db_ = std::make_unique<Database>(db_path_.c_str(), SQLite::OPEN_READWRITE |
+                                                               SQLite::OPEN_CREATE |
+                                                               SQLite::OPEN_FULLMUTEX);
+
+        db_->exec("PRAGMA foreign_keys = ON"s);
+        db_->exec("PRAGMA journal_mode = WAL"s);
+        InitializeSchema();
+        statement_manager_ = std::make_unique<StatementManager>(*db_);
+    } catch (const Exception& e) {
+        throw std::runtime_error(std::format("Failed to configure database: {}", e.what()));
+    } catch (const std::runtime_error& e) {
+        throw std::runtime_error(std::format("Failed to initialize database: {}", e.what()));
+    }
+}
 
 bool TaskDB::IsUserExist(int64_t user_id) {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
