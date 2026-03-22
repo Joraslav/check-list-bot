@@ -2,6 +2,7 @@
 
 #include "Task.hpp"
 
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
@@ -12,6 +13,8 @@ namespace database {
  * @brief Interface for database connection
  */
 class DatabaseConnection {
+ protected:
+    mutable std::mutex db_mutex_;  ///< Mutex for thread safety
  public:
     DatabaseConnection() = default;
 

@@ -144,6 +144,12 @@ class TaskDB final : public DatabaseConnection {
      * @brief Statement manager for use statements
      */
     std::unique_ptr<StatementManager> statement_manager_;
+
+    /**
+     * @brief Initialize database schema. Should be called only once when database is created for
+     * the first time
+     */
+    void InitializeSchema();
 };
 
 }  // namespace database

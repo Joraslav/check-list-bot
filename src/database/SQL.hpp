@@ -27,7 +27,7 @@ class SQL {
 
  private:
     static constexpr std::string_view INSERT_USER =
-        R"(INSERT INTO users (user_id, user_name) VALUES (?, ?))";
+        R"(INSERT INTO users (user_id) VALUES (?))";
 
     static constexpr std::string_view INSERT_TASK =
         R"(INSERT INTO tasks (user_id, text, status) VALUES (?, ?, ?) RETURNING id)";
@@ -59,8 +59,11 @@ class SQL {
         R"(SELECT 1 FROM tasks WHERE id = ? AND user_id = ?)";
 
     static constexpr std::string_view GET_USER_STATISTICS =
-        R"(SELECT u.user_id, COUNT(id), SUM(status), COUNT(id) - SUM(status)
-        FROM users AS u JOIN tasks AS t ON u.user_id = t.user_id GROUP BY u.user_id)";
+        R"(SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as active
+        FROM tasks WHERE user_id = ?)";
 };
 
 }  // namespace database
