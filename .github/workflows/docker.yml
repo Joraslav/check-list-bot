@@ -28,30 +28,20 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          target: runtime
           push: false
-          load: true
-          tags: check-list-bot:ci
+          load: false
+          tags: check-list-bot:runtime-ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Save image artifact
-        run: |
-          docker save check-list-bot:ci | gzip > check-list-bot-ci.tar.gz
-
-      - name: Upload image artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: docker-image-ci
-          path: check-list-bot-ci.tar.gz
-          if-no-files-found: error
 
       - name: Publish build summary
         if: always()
         run: |
           echo "## Docker build summary" >> "$GITHUB_STEP_SUMMARY"
           echo "- Job status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Image tag: check-list-bot:ci" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Artifact: docker-image-ci" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Docker target: runtime" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image tag: check-list-bot:runtime-ci" >> "$GITHUB_STEP_SUMMARY"
 
   docker-test:
     name: Run tests in Docker image
@@ -59,20 +49,28 @@ jobs:
     needs: docker-build
 
     steps:
-      - name: Download image artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: docker-image-ci
+      - uses: actions/checkout@v6
 
-      - name: Load image
-        run: |
-          gzip -dc check-list-bot-ci.tar.gz | docker load
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build test image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: test
+          push: false
+          load: true
+          tags: check-list-bot:test-ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Run tests in container
         run: |
-          mkdir -p reports
           set +e
-          docker run --rm -v "$PWD/reports:/app/reports" --entrypoint /bin/bash check-list-bot:ci -lc "poetry run ctest --test-dir build -C Release --output-on-failure --output-junit /app/reports/ctest-report.xml" 2>&1 | tee reports/ctest-report.txt
+          mkdir -p reports
+          docker run --rm -v "$PWD/reports:/app/reports" check-list-bot:test-ci 2>&1 | tee reports/ctest-report.txt
           test_exit=${PIPESTATUS[0]}
           echo "test_exit=${test_exit}" >> "$GITHUB_ENV"
           set -e
@@ -82,8 +80,9 @@ jobs:
         run: |
           echo "## Docker test summary" >> "$GITHUB_STEP_SUMMARY"
           echo "- Job status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Test command: poetry run ctest --test-dir build -C Release --output-on-failure" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Image tag: check-list-bot:ci" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Docker target: test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image tag: check-list-bot:test-ci" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Test command: ctest --test-dir build -C Release --output-on-failure --output-junit /app/reports/ctest-report.xml" >> "$GITHUB_STEP_SUMMARY"
 
           if [ -f reports/ctest-report.txt ]; then
             test_result_line=$(grep -E '[0-9]+% tests passed, [0-9]+ tests failed out of [0-9]+' -m1 reports/ctest-report.txt || true)
