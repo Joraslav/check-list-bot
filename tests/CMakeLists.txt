@@ -1,18 +1,16 @@
 cmake_minimum_required(VERSION 3.31.0)
 
-# Find GTest
-find_package(GTest REQUIRED)
 include(GoogleTest)
-
-# Enable testing
-enable_testing()
 
 # Get all test files
 file(GLOB TEST_SOURCES CONFIGURE_DEPENDS *.cpp)
+set(TEST_SOURCE_NAMES)
 
 # Create a test executable for each test file
 foreach(test_source ${TEST_SOURCES})
     get_filename_component(test_name ${test_source} NAME_WE)
+    get_filename_component(test_file_name ${test_source} NAME)
+    list(APPEND TEST_SOURCE_NAMES ${test_file_name})
     
     add_executable(${test_name} ${test_source})
     
@@ -45,4 +43,9 @@ foreach(test_source ${TEST_SOURCES})
     gtest_discover_tests(${test_name})
 endforeach()
 
-message(STATUS "Tests configured: ${TEST_SOURCES}")
+if(TEST_SOURCE_NAMES)
+    list(JOIN TEST_SOURCE_NAMES "\n  - " TEST_SOURCE_NAMES_FORMATTED)
+    message(STATUS "Tests configured:\n  - ${TEST_SOURCE_NAMES_FORMATTED}")
+else()
+    message(STATUS "Tests configured: no test sources found")
+endif()

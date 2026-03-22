@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(WITH_TESTS "Build tests" ON)
-if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(WITH_TESTS ON)
 endif()
 option(ENABLE_CCACHE "Use ccache to speed up C/C++ rebuilds" ON)
