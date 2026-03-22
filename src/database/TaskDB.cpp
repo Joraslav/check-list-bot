@@ -80,7 +80,9 @@ TaskDB::TransactionGuard::~TransactionGuard() noexcept {
 
     try {
         task_db_->db_->exec("ROLLBACK");
-    } catch (...) {
+    } catch (const Exception& e) {
+        throw std::runtime_error(
+            std::format("Failed to rollback transaction in destructor: {}", e.what()));
     }
     active_ = false;
 }
