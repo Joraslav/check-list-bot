@@ -176,7 +176,8 @@ void TaskDB::AddUser(int64_t user_id, const std::string& user_name) {
     }
 }
 
-int64_t TaskDB::AddTask(int64_t user_id, const std::string& text, TaskStatus status) {
+std::optional<int64_t> TaskDB::AddTask(int64_t user_id, const std::string& text,
+                                       TaskStatus status) {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::INSERT_TASK));
 
@@ -195,7 +196,7 @@ int64_t TaskDB::AddTask(int64_t user_id, const std::string& text, TaskStatus sta
     } catch (const std::exception& e) {
         throw std::runtime_error("Error in AddTask function: "s.append(e.what()));
     }
-    return -1;
+    return std::nullopt;
 }
 
 std::optional<TaskList> TaskDB::GetAllTasks(int64_t user_id) {

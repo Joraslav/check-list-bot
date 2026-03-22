@@ -41,11 +41,11 @@ class DatabaseConnection {
      * @param user_id ID user in database
      * @param text Text of task
      * @param status Status of task. Default is ACTIVE
-     * @return `int64_t` - The ID of the created task
+     * @return `std::optional<int64_t>` - The ID of the created task
      * @throw `std::runtime_error` if task is not added
      */
-    virtual int64_t AddTask(int64_t user_id, const std::string& text,
-                            TaskStatus status = TaskStatus::ACTIVE) = 0;
+    virtual std::optional<int64_t> AddTask(int64_t user_id, const std::string& text,
+                                           TaskStatus status = TaskStatus::ACTIVE) = 0;
 
     /**
      * @brief Get ALL users tasks

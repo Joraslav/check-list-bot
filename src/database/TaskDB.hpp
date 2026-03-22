@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -88,11 +89,11 @@ class TaskDB final : public DatabaseConnection {
      * @param user_id ID user in database
      * @param text Text of task
      * @param status Status of task. Default is ACTIVE
-     * @return `int64_t` - The ID of the created task
+     * @return `std::optional<int64_t>` - The ID of the created task
      * @throw `std::runtime_error` if task is not added
      */
-    int64_t AddTask(int64_t user_id, const std::string& text,
-                    TaskStatus status = TaskStatus::ACTIVE) override;
+    std::optional<int64_t> AddTask(int64_t user_id, const std::string& text,
+                                   TaskStatus status = TaskStatus::ACTIVE) override;
 
     /**
      * @brief Get ALL users tasks
@@ -180,8 +181,8 @@ class TaskDB final : public DatabaseConnection {
     std::unique_ptr<StatementManager> statement_manager_;
 
     /**
-     * @brief Initialize database schema. Should be called only once when database is created for
-     * the first time
+     * @brief Initialize database schema. Safe to call on startup; uses IF NOT EXISTS so it can be
+     * invoked whenever the database is opened
      */
     void InitializeSchema();
 };
