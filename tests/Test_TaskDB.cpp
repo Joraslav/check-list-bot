@@ -2,9 +2,15 @@
 
 #include "TaskDB.hpp"
 
+#include <atomic>
+#include <format>
+#include <latch>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
+#include <vector>
 
 using namespace database;
 using std::string_literals::operator""s;
@@ -304,6 +310,136 @@ TEST_F(TaskDBTest, RollbackTransaction_Reverts_Changes_After_Error_In_Transactio
     db.RollbackTransaction();
 
     EXPECT_FALSE(db.IsUserExist(kUserId));
+}
+
+TEST_F(TaskDBTest, ConcurrentAddUser_Adds_All_Unique_Users) {
+    constexpr int kThreadCount = 8;
+    constexpr int64_t kBaseUserId = 10'000;
+
+    std::latch ready_latch(kThreadCount);
+    std::latch start_latch(1);
+    std::mutex errors_mutex;
+    std::vector<std::string> errors;
+    std::vector<std::jthread> threads;
+    threads.reserve(kThreadCount);
+
+    for (int i = 0; i < kThreadCount; ++i) {
+        threads.emplace_back([&, i]() {
+            ready_latch.count_down();
+            start_latch.wait();
+            try {
+                db.AddUser(kBaseUserId + i, std::format("user-{}", i));
+            } catch (const std::exception& e) {
+                const std::lock_guard<std::mutex> lock(errors_mutex);
+                errors.emplace_back(e.what());
+            }
+        });
+    }
+
+    ready_latch.wait();
+    start_latch.count_down();
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    EXPECT_TRUE(errors.empty());
+    for (int i = 0; i < kThreadCount; ++i) {
+        EXPECT_TRUE(db.IsUserExist(kBaseUserId + i));
+    }
+}
+
+TEST_F(TaskDBTest, ConcurrentUpdateTaskStatus_Does_Not_Throw_And_Keeps_Task_Visible) {
+    AddDefaultUser();
+    const int64_t task_id = AddTaskForDefaultUser("toggle-status"sv, TaskStatus::ACTIVE);
+    constexpr int kThreadCount = 10;
+
+    std::latch ready_latch(kThreadCount);
+    std::latch start_latch(1);
+    std::atomic<int> exception_count = 0;
+    std::vector<std::jthread> threads;
+    threads.reserve(kThreadCount);
+
+    for (int i = 0; i < kThreadCount; ++i) {
+        threads.emplace_back([&, i]() {
+            ready_latch.count_down();
+            start_latch.wait();
+            try {
+                const TaskStatus new_status =
+                    (i % 2 == 0) ? TaskStatus::ACTIVE : TaskStatus::COMPLETED;
+                db.UpdateTaskStatus(kUserId, task_id, new_status);
+            } catch (...) {
+                ++exception_count;
+            }
+        });
+    }
+
+    ready_latch.wait();
+    start_latch.count_down();
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    EXPECT_EQ(exception_count.load(), 0);
+    const auto tasks = db.GetAllTasks(kUserId);
+    ASSERT_TRUE(tasks.has_value());
+    ASSERT_EQ(tasks->size(), 1U);
+    EXPECT_TRUE((*tasks)[0].status == TaskStatus::ACTIVE ||
+                (*tasks)[0].status == TaskStatus::COMPLETED);
+}
+
+TEST_F(TaskDBTest, ConcurrentReadAndWriteStatistics_Remains_Consistent) {
+    AddDefaultUser();
+    constexpr int kTaskCount = 20;
+    constexpr int kReaderCount = 4;
+    for (int i = 0; i < kTaskCount; ++i) {
+        const TaskStatus status = (i % 2 == 0) ? TaskStatus::ACTIVE : TaskStatus::COMPLETED;
+        static_cast<void>(AddTaskForDefaultUser(std::format("task-{}", i), status));
+    }
+
+    std::atomic<bool> writer_done = false;
+    std::atomic<bool> inconsistent_stats = false;
+    std::atomic<int> exception_count = 0;
+
+    std::jthread writer([&]() {
+        try {
+            for (int i = 0; i < kTaskCount * 5; ++i) {
+                const int64_t task_id = static_cast<int64_t>(i % kTaskCount) + 1;
+                const TaskStatus status = (i % 2 == 0) ? TaskStatus::ACTIVE : TaskStatus::COMPLETED;
+                db.UpdateTaskStatus(kUserId, task_id, status);
+            }
+        } catch (...) {
+            ++exception_count;
+        }
+        writer_done = true;
+    });
+
+    std::vector<std::jthread> readers;
+    readers.reserve(kReaderCount);
+    for (int i = 0; i < kReaderCount; ++i) {
+        readers.emplace_back([&]() {
+            try {
+                while (!writer_done.load()) {
+                    const TaskStatistics stats = db.GetUserStatistics(kUserId);
+                    if (stats.total != kTaskCount ||
+                        stats.active + stats.completed != stats.total) {
+                        inconsistent_stats = true;
+                    }
+                }
+            } catch (...) {
+                ++exception_count;
+            }
+        });
+    }
+
+    writer.join();
+    for (auto& reader : readers) {
+        reader.join();
+    }
+
+    EXPECT_EQ(exception_count.load(), 0);
+    EXPECT_FALSE(inconsistent_stats.load());
 }
 
 }  // namespace

@@ -4,13 +4,11 @@ project(check-list-bot
     LANGUAGES CXX
     DESCRIPTION "Check-list-bot is a Telegram bot for management of tasks.")
 
-enable_testing()
-
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(MODE_DEV "Enable test/dev targets" ON)
+option(WITH_TESTS "Build tests" ON)
 option(ENABLE_CCACHE "Use ccache to speed up C/C++ rebuilds" ON)
 if(ENABLE_CCACHE)
     find_program(CCACHE_PROGRAM ccache)
@@ -40,7 +38,8 @@ add_subdirectory(src/database)
 add_subdirectory(src/log)
 add_subdirectory(src/bot)
 
-if(MODE_DEV)
+if(WITH_TESTS)
+    enable_testing()
     FIND_LIB(GTest)
     add_subdirectory(tests)
 endif()
