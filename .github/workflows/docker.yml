@@ -43,6 +43,14 @@ jobs:
           path: check-list-bot-ci.tar.gz
           if-no-files-found: error
 
+      - name: Publish build summary
+        if: always()
+        run: |
+          echo "## Docker build summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Job status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image tag: check-list-bot:ci" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Artifact: docker-image-ci" >> "$GITHUB_STEP_SUMMARY"
+
   docker-test:
     name: Run tests in Docker image
     runs-on: ubuntu-latest
@@ -60,4 +68,52 @@ jobs:
 
       - name: Run tests in container
         run: |
-          docker run --rm --entrypoint /bin/bash check-list-bot:ci -lc "poetry run ctest --test-dir build -C Release --output-on-failure"
+          mkdir -p reports
+          set +e
+          docker run --rm --entrypoint /bin/bash check-list-bot:ci -lc "poetry run ctest --test-dir build -C Release --output-on-failure" 2>&1 | tee reports/ctest-report.txt
+          test_exit=${PIPESTATUS[0]}
+          echo "test_exit=${test_exit}" >> "$GITHUB_ENV"
+          set -e
+
+      - name: Publish test summary
+        if: always()
+        run: |
+          echo "## Docker test summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Job status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Test command: poetry run ctest --test-dir build -C Release --output-on-failure" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image tag: check-list-bot:ci" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f reports/ctest-report.txt ]; then
+            test_result_line=$(grep -E '[0-9]+% tests passed, [0-9]+ tests failed out of [0-9]+' -m1 reports/ctest-report.txt || true)
+            if [ -n "$test_result_line" ]; then
+              echo "- CTest: ${test_result_line}" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "<details><summary>Последние 80 строк CTest отчёта</summary>" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "```text" >> "$GITHUB_STEP_SUMMARY"
+            tail -n 80 reports/ctest-report.txt >> "$GITHUB_STEP_SUMMARY"
+            echo "```" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- CTest report not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload ctest report artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ctest-report
+          path: reports/ctest-report.txt
+          if-no-files-found: warn
+
+      - name: Fail job if tests failed
+        if: always()
+        run: |
+          test_exit_value="${test_exit:-1}"
+          if [ "${test_exit_value}" -ne 0 ]; then
+            echo "Tests failed with exit code ${test_exit_value}."
+            exit "${test_exit_value}"
+          fi
