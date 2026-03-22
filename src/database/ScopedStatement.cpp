@@ -23,14 +23,20 @@ ScopedStatement& ScopedStatement::operator=(ScopedStatement&& other) noexcept {
 
 void ScopedStatement::Reset() noexcept {
     if (owns_ && stmt_ != nullptr) {
-        stmt_->reset();
+        try {
+            stmt_->reset();
+        } catch (...) {
+        }
     }
     owns_ = false;
+    stmt_ = nullptr;
 }
 
 Statement* ScopedStatement::Release() noexcept {
+    Statement* released_stmt = stmt_;
     owns_ = false;
-    return stmt_;
+    stmt_ = nullptr;
+    return released_stmt;
 }
 
 }  // namespace database

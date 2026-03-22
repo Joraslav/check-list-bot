@@ -1,0 +1,41 @@
+---
+InheritParentConfig: true
+
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  concurrency-*,
+  performance-*,
+  modernize-*,
+  readability-*,
+  misc-*,
+  -performance-avoid-endl,
+  -performance-enum-size,
+  -modernize-use-nodiscard,
+  -misc-include-cleaner,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-naming,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-function-size
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '.*(/src/|/tests/|/main\.cpp$).*'
+
+FormatStyle: file
+UseColor: true
+
+CheckOptions:
+  - key: modernize-use-nullptr.NullMacros
+    value: 'NULL'
+  - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value: 'true'
+  - key: readability-function-cognitive-complexity.Threshold
+    value: '60'
+  - key: readability-function-size.LineThreshold
+    value: '300'
+  - key: readability-function-size.StatementThreshold
+    value: '200'

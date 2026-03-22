@@ -74,6 +74,11 @@ mapfile -t cpp_files < <(
 			\( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.c" \)
 	fi
 
+	if [ -d "./tests" ]; then
+		find ./tests -type f \
+			\( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" -o -name "*.c" \)
+	fi
+
 	if [ -f "./main.cpp" ]; then
 		echo "./main.cpp"
 	fi
