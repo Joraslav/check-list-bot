@@ -2,9 +2,9 @@ name: Docker Build
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "test*", "test/**"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "test*", "test/**"]
   workflow_dispatch:
 
 permissions:
@@ -27,6 +27,37 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
+          load: true
           tags: check-list-bot:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Save image artifact
+        run: |
+          docker save check-list-bot:ci | gzip > check-list-bot-ci.tar.gz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: docker-image-ci
+          path: check-list-bot-ci.tar.gz
+          if-no-files-found: error
+
+  docker-test:
+    name: Run tests in Docker image
+    runs-on: ubuntu-latest
+    needs: docker-build
+
+    steps:
+      - name: Download image artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: docker-image-ci
+
+      - name: Load image
+        run: |
+          gzip -dc check-list-bot-ci.tar.gz | docker load
+
+      - name: Run tests in container
+        run: |
+          docker run --rm --entrypoint /bin/bash check-list-bot:ci -lc "poetry run ctest --test-dir build -C Release --output-on-failure"
