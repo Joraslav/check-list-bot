@@ -44,8 +44,8 @@ class TaskDB final : public DatabaseConnection {
 
         TransactionGuard(const TransactionGuard&) = delete;
         TransactionGuard& operator=(const TransactionGuard&) = delete;
-        TransactionGuard(TransactionGuard&&) noexcept = default;
-        TransactionGuard& operator=(TransactionGuard&&) noexcept = default;
+        TransactionGuard(TransactionGuard&& other) noexcept;
+        TransactionGuard& operator=(TransactionGuard&& other) noexcept;
 
         void Commit();
         void Rollback();

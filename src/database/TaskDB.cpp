@@ -81,10 +81,35 @@ TaskDB::TransactionGuard::~TransactionGuard() noexcept {
     try {
         task_db_->db_->exec("ROLLBACK");
     } catch (const Exception& e) {
-        throw std::runtime_error(
-            std::format("Failed to rollback transaction in destructor: {}", e.what()));
+        LOG(Console, ERROR, "Failed to rollback transaction in destructor: {}", e.what());
     }
     active_ = false;
+}
+
+TaskDB::TransactionGuard::TransactionGuard(TransactionGuard&& other) noexcept
+    : task_db_(other.task_db_), lock_(std::move(other.lock_)), active_(other.active_) {
+    other.task_db_ = nullptr;
+    other.active_ = false;
+}
+
+TaskDB::TransactionGuard& TaskDB::TransactionGuard::operator=(TransactionGuard&& other) noexcept {
+    if (this != &other) {
+        if (active_ && task_db_ != nullptr) {
+            try {
+                task_db_->db_->exec("ROLLBACK");
+            } catch (const Exception& e) {
+                LOG(Console, ERROR, "Failed to rollback transaction in move assignment: {}",
+                    e.what());
+            }
+            active_ = false;
+        }
+        task_db_ = other.task_db_;
+        lock_ = std::move(other.lock_);
+        active_ = other.active_;
+        other.task_db_ = nullptr;
+        other.active_ = false;
+    }
+    return *this;
 }
 
 void TaskDB::TransactionGuard::Commit() {
@@ -274,8 +299,16 @@ void TaskDB::EditTask(int64_t user_id, int64_t task_id, const std::string& new_t
 
         edit_stmt->exec();
         if (db_->getChanges() == 0) {
-            throw std::invalid_argument(
-                std::format("Invalid task {} for user {}", task_id, user_id));
+            // getChanges() == 0 can mean either "task not found" or "same value was set".
+            // Do a follow-up ownership check to distinguish the two cases.
+            ScopedStatement verify_stmt(
+                statement_manager_->Get(StatementType::VERIFY_TASK_OWNERSHIP));
+            verify_stmt->bind(1, task_id);
+            verify_stmt->bind(2, user_id);
+            if (!verify_stmt->executeStep()) {
+                throw std::invalid_argument(
+                    std::format("Invalid task {} for user {}", task_id, user_id));
+            }
         }
 
     } catch (const Exception& e) {
