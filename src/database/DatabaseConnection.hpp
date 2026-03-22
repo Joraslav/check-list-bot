@@ -2,8 +2,10 @@
 
 #include "Task.hpp"
 
+#include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace database {
@@ -21,6 +23,14 @@ class DatabaseConnection {
     DatabaseConnection& operator=(const DatabaseConnection&) = delete;
 
     /**
+     * @brief Add user to database
+     * @param user_id ID user in database
+     * @param user_name Name of user
+     * @throw `std::runtime_error` if user is not added
+     */
+    virtual void AddUser(int64_t user_id, const std::string& user_name) = 0;
+
+    /**
      * @brief Checks the connection to the database
      * @return `True` if connetion is established, `False` is not established
      */
@@ -31,11 +41,11 @@ class DatabaseConnection {
      * @param user_id ID user in database
      * @param text Text of task
      * @param status Status of task. Default is ACTIVE
-     * @return `int64_t` - The ID of the created task
-     * @throw `std::runtime_error` if task is not added
+     * @return `std::optional<int64_t>` - The ID of the created task, or `std::nullopt`
+     *         if the task could not be added
      */
-    virtual int64_t AddTask(int64_t user_id, const std::string& text,
-                            TaskStatus status = TaskStatus::ACTIVE) = 0;
+    virtual std::optional<int64_t> AddTask(int64_t user_id, const std::string& text,
+                                           TaskStatus status = TaskStatus::ACTIVE) = 0;
 
     /**
      * @brief Get ALL users tasks
@@ -106,6 +116,15 @@ class DatabaseConnection {
      * @brief Rollback transaction
      */
     virtual void RollbackTransaction() = 0;
+
+ protected:
+    /**
+     * @brief Accessor for database mutex in derived classes
+     */
+    std::recursive_mutex& DbMutex() noexcept { return db_mutex_; }
+
+ private:
+    mutable std::recursive_mutex db_mutex_;  ///< Mutex for thread safety
 };
 
 }  // namespace database
