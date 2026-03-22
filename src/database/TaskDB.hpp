@@ -186,15 +186,20 @@ class TaskDB final : public DatabaseConnection {
     std::unique_ptr<StatementManager> statement_manager_;
 
     /**
+     * @brief Manual transaction state for Begin/Commit/Rollback API.
+     */
+    bool manual_transaction_active_ = false;
+
+    /**
+     * @brief TransactionGuard state flag to suppress nested auto-transactions.
+     */
+    bool guard_transaction_active_ = false;
+
+    /**
      * @brief Initialize database schema. Safe to call on startup; uses IF NOT EXISTS so it can be
      * invoked whenever the database is opened
      */
     void InitializeSchema();
-
-    /**
-     * @brief Manual transaction state for Begin/Commit/Rollback API.
-     */
-    bool manual_transaction_active_ = false;
 };
 
 }  // namespace database
