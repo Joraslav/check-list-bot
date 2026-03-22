@@ -119,8 +119,8 @@ class SQL {
     static constexpr std::string_view GET_USER_STATISTICS =
         R"(SELECT 
         COUNT(*) as total,
-        SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as completed,
-        SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as active
+        COALESCE(SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END), 0) as completed,
+        COALESCE(SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END), 0) as active
         FROM tasks WHERE user_id = ?)";
 };
 
