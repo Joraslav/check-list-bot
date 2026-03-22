@@ -7,6 +7,9 @@ RUN apt-get update && \
     ca-certificates \
     gnupg \
     lsb-release \
+    build-essential \
+    pkg-config \
+    git \
     python3 \
     python3-pip \
     python3-venv \
