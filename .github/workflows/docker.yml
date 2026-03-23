@@ -2,13 +2,15 @@ name: Docker Build
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "test*", "test/**"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "test*", "test/**"]
   workflow_dispatch:
 
 permissions:
+  checks: write
   contents: read
+  pull-requests: write
 
 jobs:
   docker-build:
@@ -26,7 +28,130 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          target: runtime
           push: false
-          tags: check-list-bot:ci
+          outputs: type=cacheonly
+          tags: check-list-bot:runtime-ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Publish build summary
+        if: always()
+        run: |
+          echo "## Docker build summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Job status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Docker target: runtime" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image tag: check-list-bot:runtime-ci" >> "$GITHUB_STEP_SUMMARY"
+
+  docker-test:
+    name: Run tests in Docker image
+    runs-on: ubuntu-latest
+    needs: docker-build
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build test image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: test
+          push: false
+          load: true
+          tags: check-list-bot:test-ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run tests in container
+        run: |
+          set +e
+          mkdir -p reports
+          docker run --rm -v "$PWD/reports:/app/reports" check-list-bot:test-ci 2>&1 | tee reports/ctest-report.txt
+          test_exit=${PIPESTATUS[0]}
+          echo "test_exit=${test_exit}" >> "$GITHUB_ENV"
+          set -e
+
+      - name: Publish test summary
+        if: always()
+        run: |
+          echo "## Docker test summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Job status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Docker target: test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image tag: check-list-bot:test-ci" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Test command: ctest --test-dir build -C Release --output-on-failure --output-junit /app/reports/ctest-report.xml" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f reports/ctest-report.txt ]; then
+            test_result_line=$(grep -E '[0-9]+% tests passed, [0-9]+ tests failed out of [0-9]+' -m1 reports/ctest-report.txt || true)
+            if [ -n "$test_result_line" ]; then
+              echo "- CTest: ${test_result_line}" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "<details><summary>Последние 80 строк CTest отчёта</summary>" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "```text" >> "$GITHUB_STEP_SUMMARY"
+            tail -n 80 reports/ctest-report.txt >> "$GITHUB_STEP_SUMMARY"
+            echo "```" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- CTest report not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload ctest report artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ctest-report
+          path: reports/ctest-report.txt
+          if-no-files-found: warn
+
+      - name: Publish test report in Checks
+        if: always()
+        id: publish-test-results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: reports/ctest-report.xml
+          check_name: CTest Results (${{ github.event_name }})
+          comment_mode: ${{ github.event_name == 'pull_request' && 'always' || 'off' }}
+          report_individual_runs: true
+          report_suite_logs: any
+          check_run_annotations: all tests, skipped tests
+          check_run_annotations_branch: "*"
+          compare_to_earlier_commit: true
+          test_changes_limit: 100
+          fail_on: test failures
+          action_fail: false
+          job_summary: true
+          json_file: reports/ctest-report.json
+          json_suite_details: true
+          json_test_case_results: true
+
+      - name: Upload ctest junit artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ctest-junit-report
+          path: reports/ctest-report.xml
+          if-no-files-found: warn
+
+      - name: Upload ctest json artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ctest-json-report
+          path: reports/ctest-report.json
+          if-no-files-found: warn
+
+      - name: Fail job if tests failed
+        if: always()
+        run: |
+          test_exit_value="${test_exit:-1}"
+          if [ "${test_exit_value}" -ne 0 ]; then
+            echo "Tests failed with exit code ${test_exit_value}."
+            exit "${test_exit_value}"
+          fi

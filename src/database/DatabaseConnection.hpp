@@ -101,22 +101,6 @@ class DatabaseConnection {
      */
     virtual void DeleteAllUserTasks(int64_t user_id) = 0;
 
-    /**
-     * @brief Begin transaction
-     * @warning The operation is irreversible
-     */
-    virtual void BeginTransaction() = 0;
-
-    /**
-     * @brief Commit transaction
-     */
-    virtual void CommitTransaction() = 0;
-
-    /**
-     * @brief Rollback transaction
-     */
-    virtual void RollbackTransaction() = 0;
-
  protected:
     /**
      * @brief Accessor for database mutex in derived classes
