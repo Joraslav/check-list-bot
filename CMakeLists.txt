@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(WITH_TESTS "Build tests" ON)
+option(WITH_TESTS "Build tests" OFF)
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(WITH_TESTS ON)
 endif()

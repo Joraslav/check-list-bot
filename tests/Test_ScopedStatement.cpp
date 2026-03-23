@@ -406,6 +406,8 @@ TEST_F(ScopedStatementTest, BoolConversion_ChangesAfterRelease) {
 TEST_F(ScopedStatementTest, BoolConversion_IsExplicit) {
     static_assert(std::is_constructible_v<bool, ScopedStatement>,
                   "operator bool() should be explicit and convertible");
+    static_assert(!std::is_convertible_v<ScopedStatement, bool>,
+                  "operator bool() should not be implicitly convertible");
 }
 
 TEST_F(ScopedStatementTest, BoolConversion_IsNoexcept) {

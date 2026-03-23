@@ -12,6 +12,7 @@ namespace {
 class TransactionGuardTest : public ::testing::Test {
  protected:
     static constexpr int64_t kUserId = 777;
+    static constexpr int64_t kOtherUserId = 778;
 
     TaskDB db;
 };
@@ -76,15 +77,23 @@ TEST_F(TransactionGuardTest, CreateGuard_MoveCtor_TransfersOwnership) {
 }
 
 TEST_F(TransactionGuardTest, CreateGuard_MoveAssign_TransfersOwnership) {
+    TaskDB other_db;
+
     auto first_guard = db.CreateTransactionGuard();
-    auto second_guard = std::move(first_guard);
+    auto second_guard = other_db.CreateTransactionGuard();
+
+    db.AddUser(kUserId, "user"s);
+    other_db.AddUser(kOtherUserId, "other user"s);
+
+    second_guard = std::move(first_guard);
 
     EXPECT_FALSE(first_guard.IsActive());
     EXPECT_TRUE(second_guard.IsActive());
 
-    db.AddUser(kUserId, "user"s);
-    second_guard.Rollback();
-    EXPECT_FALSE(db.IsUserExist(kUserId));
+    second_guard.Commit();
+
+    EXPECT_TRUE(db.IsUserExist(kUserId));
+    EXPECT_FALSE(other_db.IsUserExist(kOtherUserId));
 }
 
 }  // namespace
