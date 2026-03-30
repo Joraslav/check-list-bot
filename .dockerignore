@@ -88,8 +88,13 @@ Testing/
 
 # Git files
 .github/
+.git/
 .gitignore
 .gitattributes
+
+# Local CI artifacts
+reports/
+artifacts/
 
 # Unit test / coverage reports
 htmlcov/

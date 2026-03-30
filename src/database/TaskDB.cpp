@@ -21,6 +21,7 @@ TaskDB::TransactionGuard::TransactionGuard(TaskDB& task_db)
     : task_db_(&task_db), lock_(task_db.DbMutex()) {
     try {
         task_db_->db_->exec("BEGIN IMMEDIATE TRANSACTION");
+        task_db_->guard_transaction_active_ = true;
         active_ = true;
     } catch (const Exception& e) {
         throw std::runtime_error(std::format("Failed to begin transaction: {}", e.what()));
@@ -37,6 +38,7 @@ TaskDB::TransactionGuard::~TransactionGuard() noexcept {
     } catch (const Exception& e) {
         LOG(Console, ERROR, "Failed to rollback transaction in destructor: {}", e.what());
     }
+    task_db_->guard_transaction_active_ = false;
     active_ = false;
 }
 
@@ -73,6 +75,7 @@ void TaskDB::TransactionGuard::Commit() {
 
     try {
         task_db_->db_->exec("COMMIT");
+        task_db_->guard_transaction_active_ = false;
         active_ = false;
         task_db_ = nullptr;
         lock_.unlock();
@@ -88,6 +91,7 @@ void TaskDB::TransactionGuard::Rollback() {
 
     try {
         task_db_->db_->exec("ROLLBACK");
+        task_db_->guard_transaction_active_ = false;
         active_ = false;
         task_db_ = nullptr;
         lock_.unlock();
@@ -163,12 +167,19 @@ bool TaskDB::IsUserExist(int64_t user_id) {
 
 void TaskDB::AddUser(int64_t user_id, const std::string& user_name) {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    std::unique_ptr<TransactionGuard> transaction;
+    if (!manual_transaction_active_ && !guard_transaction_active_) {
+        transaction = std::make_unique<TransactionGuard>(*this);
+    }
     ScopedStatement stmt(statement_manager_->Get(StatementType::INSERT_USER));
 
     try {
         stmt->bind(1, user_id);
         stmt->bindNoCopy(2, user_name);
         stmt->exec();
+        if (transaction != nullptr) {
+            transaction->Commit();
+        }
     } catch (const Exception& e) {
         throw std::runtime_error("SQL error in AddUser: "s.append(e.what()));
     } catch (const std::exception& e) {
@@ -179,6 +190,10 @@ void TaskDB::AddUser(int64_t user_id, const std::string& user_name) {
 std::optional<int64_t> TaskDB::AddTask(int64_t user_id, const std::string& text,
                                        TaskStatus status) {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    std::unique_ptr<TransactionGuard> transaction;
+    if (!manual_transaction_active_ && !guard_transaction_active_) {
+        transaction = std::make_unique<TransactionGuard>(*this);
+    }
     ScopedStatement stmt(statement_manager_->Get(StatementType::INSERT_TASK));
 
     try {
@@ -188,7 +203,14 @@ std::optional<int64_t> TaskDB::AddTask(int64_t user_id, const std::string& text,
 
         if (stmt->executeStep()) {
             const int64_t task_id = stmt->getColumn(0).getInt64();
+            if (transaction != nullptr) {
+                transaction->Commit();
+            }
             return task_id;
+        }
+
+        if (transaction != nullptr) {
+            transaction->Commit();
         }
 
     } catch (const Exception& e) {
@@ -274,6 +296,10 @@ TaskStatistics TaskDB::GetUserStatistics(int64_t user_id) {
 
 void TaskDB::UpdateTaskStatus(int64_t user_id, int64_t task_id, TaskStatus new_status) {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    std::unique_ptr<TransactionGuard> transaction;
+    if (!manual_transaction_active_ && !guard_transaction_active_) {
+        transaction = std::make_unique<TransactionGuard>(*this);
+    }
     ScopedStatement stmt(statement_manager_->Get(StatementType::UPDATE_STATUS));
 
     try {
@@ -282,6 +308,9 @@ void TaskDB::UpdateTaskStatus(int64_t user_id, int64_t task_id, TaskStatus new_s
         stmt->bind(3, task_id);
 
         stmt->exec();
+        if (transaction != nullptr) {
+            transaction->Commit();
+        }
     } catch (const Exception& e) {
         throw std::runtime_error("SQL error in UpdateTaskStatus: "s.append(e.what()));
     } catch (const std::exception& e) {
@@ -291,6 +320,10 @@ void TaskDB::UpdateTaskStatus(int64_t user_id, int64_t task_id, TaskStatus new_s
 
 void TaskDB::EditTask(int64_t user_id, int64_t task_id, const std::string& new_text) {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    std::unique_ptr<TransactionGuard> transaction;
+    if (!manual_transaction_active_ && !guard_transaction_active_) {
+        transaction = std::make_unique<TransactionGuard>(*this);
+    }
     ScopedStatement edit_stmt(statement_manager_->Get(StatementType::EDIT_TASK));
 
     try {
@@ -312,6 +345,10 @@ void TaskDB::EditTask(int64_t user_id, int64_t task_id, const std::string& new_t
             }
         }
 
+        if (transaction != nullptr) {
+            transaction->Commit();
+        }
+
     } catch (const Exception& e) {
         throw std::runtime_error("SQL error in EditTask: "s.append(e.what()));
     } catch (const std::exception& e) {
@@ -321,6 +358,10 @@ void TaskDB::EditTask(int64_t user_id, int64_t task_id, const std::string& new_t
 
 void TaskDB::DeleteTask(int64_t user_id, int64_t task_id) {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    std::unique_ptr<TransactionGuard> transaction;
+    if (!manual_transaction_active_ && !guard_transaction_active_) {
+        transaction = std::make_unique<TransactionGuard>(*this);
+    }
     ScopedStatement delete_stmt(statement_manager_->Get(StatementType::DELETE_TASK));
 
     try {
@@ -333,6 +374,10 @@ void TaskDB::DeleteTask(int64_t user_id, int64_t task_id) {
                 std::format("Invalid task {} for user {}", task_id, user_id));
         }
 
+        if (transaction != nullptr) {
+            transaction->Commit();
+        }
+
     } catch (const Exception& e) {
         throw std::runtime_error("SQL error in DeleteTask: "s.append(e.what()));
     } catch (const std::exception& e) {
@@ -342,11 +387,19 @@ void TaskDB::DeleteTask(int64_t user_id, int64_t task_id) {
 
 void TaskDB::DeleteAllUserTasks(int64_t user_id) {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    std::unique_ptr<TransactionGuard> transaction;
+    if (!manual_transaction_active_ && !guard_transaction_active_) {
+        transaction = std::make_unique<TransactionGuard>(*this);
+    }
     ScopedStatement stmt(statement_manager_->Get(StatementType::DELETE_ALL_USER_TASKS));
 
     try {
         stmt->bind(1, user_id);
         stmt->exec();
+
+        if (transaction != nullptr) {
+            transaction->Commit();
+        }
 
     } catch (const Exception& e) {
         throw std::runtime_error("SQL error in DeleteAllUserTasks: "s.append(e.what()));
@@ -362,17 +415,29 @@ bool TaskDB::IsConnected() noexcept {
 
 void TaskDB::BeginTransaction() {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    if (manual_transaction_active_) {
+        throw std::logic_error("Transaction already active");
+    }
     db_->exec("BEGIN IMMEDIATE TRANSACTION");
+    manual_transaction_active_ = true;
 }
 
 void TaskDB::CommitTransaction() {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    if (!manual_transaction_active_) {
+        throw std::logic_error("No active transaction");
+    }
     db_->exec("COMMIT");
+    manual_transaction_active_ = false;
 }
 
 void TaskDB::RollbackTransaction() {
     const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    if (!manual_transaction_active_) {
+        throw std::logic_error("No active transaction");
+    }
     db_->exec("ROLLBACK");
+    manual_transaction_active_ = false;
 }
 
 }  // namespace database
