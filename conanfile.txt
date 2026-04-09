@@ -4,6 +4,8 @@ tgbot/1.9.1
 spdlog/1.17.0
 magic_enum/0.9.7
 gtest/1.17.0
+[tool_requires]
+m4/1.4.20
 [generators]
 CMakeDeps
 CMakeToolchain
