@@ -286,7 +286,7 @@ TaskStatistics TaskDB::GetUserStatistics(int64_t user_id) {
                                        .active = stmt->getColumn(2).getInt()};
             return stats;
         }
-        return TaskStatistics{0, 0, 0};
+        return TaskStatistics{.total = 0, .completed = 0, .active = 0};
     } catch (const Exception& e) {
         throw std::runtime_error("SQL error in GetUserStatistics: "s.append(e.what()));
     } catch (const std::exception& e) {

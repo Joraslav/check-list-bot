@@ -1,11 +1,13 @@
 #include "Log.hpp"
 
+#include "spdlog/logger.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 #include <chrono>
 #include <filesystem>
 #include <format>
+#include <memory>
 #include <string_view>
 #include <unordered_map>
 

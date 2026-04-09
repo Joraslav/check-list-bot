@@ -426,7 +426,9 @@ TEST_F(ScopedStatementTest, Destructor_CallsReset_OnOwnedStatement) {
 }
 
 TEST_F(ScopedStatementTest, Destructor_DoesNotCrash_OnNull) {
-    { ScopedStatement scoped(nullptr); }
+    {
+        ScopedStatement scoped(nullptr);
+    }
     SUCCEED();
 }
 

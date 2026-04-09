@@ -1,8 +1,6 @@
 #pragma once
 
-#include "SQLiteCpp/SQLiteCpp.h"
-
-#include <utility>
+#include "SQLiteCpp/Statement.h"
 
 namespace database {
 
