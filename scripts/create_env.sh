@@ -14,6 +14,7 @@ usage() {
     echo "Использование: $0 [Debug|Release] [BuildProfile]"
     echo "Пример: $0 Debug"
     echo "Пример: $0 Debug Release"
+    echo "На Fedora автоматически используются профили Fedora-Debug/Fedora-Release, если они существуют."
 }
 
 if [ $# -lt 1 ] || [ $# -gt 2 ]; then
@@ -30,6 +31,7 @@ fi
 
 BUILD_TYPE=$1
 BUILD_PROFILE=${2:-Release}
+PROFILE_PREFIX=""
 
 if [ "$BUILD_TYPE" != "Debug" ] && [ "$BUILD_TYPE" != "Release" ]; then
     echo -e "${YELLOW}Ошибка: Неверный тип сборки '$BUILD_TYPE'. Допустимые значения: Debug, Release${NC}"
@@ -43,8 +45,20 @@ if [ "$BUILD_PROFILE" != "Debug" ] && [ "$BUILD_PROFILE" != "Release" ]; then
     exit 1
 fi
 
-HOST_PROFILE_PATH="$PROJECT_ROOT/profiles/$BUILD_TYPE"
-BUILD_PROFILE_PATH="$PROJECT_ROOT/profiles/$BUILD_PROFILE"
+if [ -f /etc/os-release ]; then
+    # На Fedora используем отдельные профили, чтобы не ломать CI/Ubuntu-профили.
+    if grep -qi '^ID=fedora$' /etc/os-release; then
+        PROFILE_PREFIX="Fedora-"
+    fi
+fi
+
+HOST_PROFILE_PATH="$PROJECT_ROOT/profiles/${PROFILE_PREFIX}$BUILD_TYPE"
+BUILD_PROFILE_PATH="$PROJECT_ROOT/profiles/${PROFILE_PREFIX}$BUILD_PROFILE"
+
+if [ ! -f "$HOST_PROFILE_PATH" ] || [ ! -f "$BUILD_PROFILE_PATH" ]; then
+    HOST_PROFILE_PATH="$PROJECT_ROOT/profiles/$BUILD_TYPE"
+    BUILD_PROFILE_PATH="$PROJECT_ROOT/profiles/$BUILD_PROFILE"
+fi
 
 if [ ! -f "$HOST_PROFILE_PATH" ]; then
     echo -e "${RED}Ошибка: Не найден host profile '$HOST_PROFILE_PATH'${NC}"
@@ -92,7 +106,7 @@ cd "$PROJECT_ROOT"
 echo -e "${GREEN}Настройка окружения проекта для сборки типа $BUILD_TYPE...${NC}"
 
 echo -e "${GREEN}Установка зависимостей Conan...${NC}"
-echo -e "${GREEN}Host profile: $BUILD_TYPE, Build profile: $BUILD_PROFILE${NC}"
+echo -e "${GREEN}Host profile: $(basename "$HOST_PROFILE_PATH"), Build profile: $(basename "$BUILD_PROFILE_PATH")${NC}"
 conan install . --build=missing -pr:h "$HOST_PROFILE_PATH" -pr:b "$BUILD_PROFILE_PATH"
 
 echo -e "${GREEN}Окружение успешно настроено!${NC}"
