@@ -25,7 +25,7 @@ jobs:
         id: clang_format
         uses: jidicula/clang-format-action@v4.16.0
         with:
-          clang-format-version: "18"
+          clang-format-version: "21"
 
       - name: Publish formatting report
         if: always()
