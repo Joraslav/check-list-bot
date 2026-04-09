@@ -1,4 +1,5 @@
-#include "SQLiteCpp/SQLiteCpp.h"
+#include "SQLiteCpp/Database.h"
+#include "SQLiteCpp/Statement.h"
 
 #include "ScopedStatement.hpp"
 
@@ -8,7 +9,9 @@
 
 using namespace std::string_literals;
 
-namespace database {
+namespace {
+
+using database::ScopedStatement;
 
 class ScopedStatementTest : public ::testing::Test {
  protected:
@@ -16,13 +19,14 @@ class ScopedStatementTest : public ::testing::Test {
     using Statement = SQLite::Statement;
     using UniquePtrStatement = std::unique_ptr<Statement>;
 
-    Database db_{":memory:"s, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE};
-
     auto CreateStatement() { return std::make_unique<Statement>(db_, "SELECT 1"); }
 
     auto CreateParameterizedStatement() {
         return std::make_unique<Statement>(db_, "SELECT ? AS value");
     }
+
+ private:
+    Database db_{":memory:"s, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE};
 };
 
 TEST_F(ScopedStatementTest, Constructor_AcceptsPointer_ToValidStatement) {
@@ -204,10 +208,10 @@ TEST_F(ScopedStatementTest, Reset_IsIdempotent) {
     ScopedStatement scoped(stmt.get());
 
     scoped.Reset();
-    auto first_result = scoped.Get();
+    auto* first_result = scoped.Get();
 
     scoped.Reset();
-    auto second_result = scoped.Get();
+    auto* second_result = scoped.Get();
 
     EXPECT_EQ(first_result, second_result);
     EXPECT_EQ(second_result, nullptr);
@@ -220,7 +224,7 @@ TEST_F(ScopedStatementTest, Release_ReturnsPointer_AndClearsOwnership) {
     ScopedStatement scoped(stmt_ptr);
     EXPECT_TRUE(scoped.Owns());
 
-    auto released = scoped.Release();
+    auto* released = scoped.Release();
 
     EXPECT_EQ(released, stmt_ptr);
     EXPECT_EQ(scoped.Get(), nullptr);
@@ -229,7 +233,7 @@ TEST_F(ScopedStatementTest, Release_ReturnsPointer_AndClearsOwnership) {
 
 TEST_F(ScopedStatementTest, Release_ReturnsNull_OnEmpty) {
     ScopedStatement scoped(nullptr);
-    auto released = scoped.Release();
+    auto* released = scoped.Release();
 
     EXPECT_EQ(released, nullptr);
     EXPECT_EQ(scoped.Get(), nullptr);
@@ -241,7 +245,7 @@ TEST_F(ScopedStatementTest, Release_DoesNotCallReset) {
     Statement* stmt_ptr = stmt.get();
 
     ScopedStatement scoped(stmt_ptr);
-    auto released = scoped.Release();
+    auto* released = scoped.Release();
 
     // The statement itself should still be accessible
     EXPECT_NE(released, nullptr);
@@ -257,8 +261,8 @@ TEST_F(ScopedStatementTest, Release_IsIdempotent) {
     auto stmt = CreateStatement();
     ScopedStatement scoped(stmt.get());
 
-    auto first_release = scoped.Release();
-    auto second_release = scoped.Release();
+    auto* first_release = scoped.Release();
+    auto* second_release = scoped.Release();
 
     EXPECT_NE(first_release, nullptr);
     EXPECT_EQ(second_release, nullptr);
@@ -426,7 +430,9 @@ TEST_F(ScopedStatementTest, Destructor_CallsReset_OnOwnedStatement) {
 }
 
 TEST_F(ScopedStatementTest, Destructor_DoesNotCrash_OnNull) {
-    { ScopedStatement scoped(nullptr); }
+    {
+        ScopedStatement scoped(nullptr);
+    }
     SUCCEED();
 }
 
@@ -547,7 +553,7 @@ TEST_F(ScopedStatementTest, EdgeCase_ReleaseAfterMove) {
     ScopedStatement scoped1(stmt.get());
     ScopedStatement scoped2(std::move(scoped1));
 
-    auto released = scoped1.Release();
+    auto* released = scoped1.Release();
     EXPECT_EQ(released, nullptr);
 }
 
@@ -608,4 +614,4 @@ TEST_F(ScopedStatementTest, Trait_Destructibility) {
     static_assert(std::is_nothrow_destructible_v<ScopedStatement>);
 }
 
-}  // namespace database
+}  // namespace

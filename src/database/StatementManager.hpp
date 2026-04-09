@@ -1,6 +1,8 @@
 #pragma once
 
-#include "SQLiteCpp/SQLiteCpp.h"
+#include "SQLiteCpp/Database.h"
+#include "SQLiteCpp/Exception.h"
+#include "SQLiteCpp/Statement.h"
 
 #include <memory>
 #include <unordered_map>

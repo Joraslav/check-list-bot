@@ -17,6 +17,8 @@ jobs:
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest
+    env:
+      CLANG_FORMAT_VERSION: "21"
 
     steps:
       - uses: actions/checkout@v6
@@ -25,7 +27,7 @@ jobs:
         id: clang_format
         uses: jidicula/clang-format-action@v4.16.0
         with:
-          clang-format-version: "18"
+          clang-format-version: ${{ env.CLANG_FORMAT_VERSION }}
 
       - name: Publish formatting report
         if: always()
@@ -36,5 +38,5 @@ jobs:
           echo "- Job: ${{ github.job }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Ref: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Commit: ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- clang-format version: 18" >> "$GITHUB_STEP_SUMMARY"
+          echo "- clang-format version: ${{ env.CLANG_FORMAT_VERSION }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Result: **${{ steps.clang_format.outcome }}**" >> "$GITHUB_STEP_SUMMARY"
