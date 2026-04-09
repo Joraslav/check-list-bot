@@ -1,0 +1,22 @@
+CompileFlags:
+  CompilationDatabase: build
+  Add:
+    - -std=c++23
+
+Index:
+  Background: Build
+
+Completion:
+  AllScopes: Yes
+  HeaderInsertion: Never
+
+Diagnostics:
+  UnusedIncludes: Strict
+
+---
+If:
+  PathMatch:
+    - src/log/Log\.hpp
+    - .*/src/log/Log\.hpp
+Diagnostics:
+  Suppress: [unused-includes]
