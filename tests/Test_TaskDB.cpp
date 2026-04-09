@@ -40,7 +40,8 @@ class TaskDBTest : public ::testing::Test {
             try {
                 db.RollbackTransaction();
             } catch (...) {
-                ADD_FAILURE() << "RollbackTransaction failed while handling AddTaskForUser exception";
+                ADD_FAILURE()
+                    << "RollbackTransaction failed while handling AddTaskForUser exception";
             }
             throw;
         }

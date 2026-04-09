@@ -22,7 +22,8 @@ class StatementManagerTest : public ::testing::Test {
     using Statement = SQLite::Statement;
 
     Database db{":memory:"sv, OpenFlags()};  // NOLINT(misc-non-private-member-variables-in-classes)
-    std::unique_ptr<StatementManager> manager;  // NOLINT(misc-non-private-member-variables-in-classes)
+    std::unique_ptr<StatementManager>
+        manager;  // NOLINT(misc-non-private-member-variables-in-classes)
 
     void SetUp() override {
         InitializeSchema(db);
