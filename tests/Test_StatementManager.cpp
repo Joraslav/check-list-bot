@@ -21,8 +21,8 @@ class StatementManagerTest : public ::testing::Test {
     using Database = SQLite::Database;
     using Statement = SQLite::Statement;
 
-    Database db{":memory:", OpenFlags()};
-    std::unique_ptr<StatementManager> manager;
+    Database db{":memory:"sv, OpenFlags()};  // NOLINT(misc-non-private-member-variables-in-classes)
+    std::unique_ptr<StatementManager> manager;  // NOLINT(misc-non-private-member-variables-in-classes)
 
     void SetUp() override {
         InitializeSchema(db);
@@ -92,7 +92,7 @@ class StatementManagerTest : public ::testing::Test {
 };
 
 TEST(StatementManagerCtorTest, Constructor_Throws_When_Schema_Is_Missing) {
-    SQLite::Database empty_db(":memory:", OpenFlags());
+    SQLite::Database empty_db(":memory:"sv, OpenFlags());
     EXPECT_THROW(static_cast<void>(StatementManager(empty_db)), std::runtime_error);
 }
 

@@ -24,7 +24,7 @@ class TaskDBTest : public ::testing::Test {
     static constexpr int64_t kOtherUserId = 2002;
     static constexpr std::string_view kDefaultUserName = "alice"sv;
 
-    TaskDB db;
+    TaskDB db;  // NOLINT(misc-non-private-member-variables-in-classes)
 
     void AddDefaultUser() { db.AddUser(kUserId, std::string(kDefaultUserName)); }
 
@@ -40,6 +40,7 @@ class TaskDBTest : public ::testing::Test {
             try {
                 db.RollbackTransaction();
             } catch (...) {
+                ADD_FAILURE() << "RollbackTransaction failed while handling AddTaskForUser exception";
             }
             throw;
         }
