@@ -2,7 +2,7 @@
 
 ## Стек и окружение
 
-- Язык: **C++23**, компилятор GCC 15
+- Язык: **C++23**, компилятор GCC (см. `profiles/`)
 - Сборка: **CMake** + **Conan** (профили в `profiles/`)
 - Линтер/форматтер: **clang-tidy** + **clang-format** (расширение clangd в VS Code)
 - Зависимости: `tgbot`, `SQLiteCpp`, `spdlog`, `magic_enum`, `GTest`
