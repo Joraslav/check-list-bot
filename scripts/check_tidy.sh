@@ -11,9 +11,10 @@ LIST_ONLY=false
 APPLY_FIXES=false
 BUILD_DIR="build"
 BUILD_TYPE=""
+JOBS=""
 
 print_usage() {
-	echo "Использование: $0 [--list] [--fix] [--build-dir <path>] [--build-type <Debug|Release|...>]"
+	echo "Использование: $0 [--list] [--fix] [--build-dir <path>] [--build-type <Debug|Release|...>] [--jobs <N>]"
 }
 
 while [ $# -gt 0 ]; do
@@ -42,6 +43,20 @@ while [ $# -gt 0 ]; do
 				exit 1
 			fi
 			BUILD_TYPE="$2"
+			shift 2
+			;;
+		--jobs)
+			if [ -z "$2" ]; then
+				echo -e "${RED}✗ Не указано значение для --jobs.${NC}"
+				print_usage
+				exit 1
+			fi
+			if ! [[ "$2" =~ ^[1-9][0-9]*$ ]]; then
+				echo -e "${RED}✗ --jobs должен быть положительным целым числом.${NC}"
+				print_usage
+				exit 1
+			fi
+			JOBS="$2"
 			shift 2
 			;;
 		--help)
@@ -106,9 +121,26 @@ if [ ! -f "$BUILD_DIR/compile_commands.json" ]; then
 	exit 1
 fi
 
+if [ -z "$JOBS" ]; then
+	total_cores=""
+	if command -v nproc &> /dev/null; then
+		total_cores="$(nproc)"
+	elif command -v getconf &> /dev/null; then
+		total_cores="$(getconf _NPROCESSORS_ONLN 2> /dev/null || true)"
+	fi
+
+	if [[ "$total_cores" =~ ^[1-9][0-9]*$ ]]; then
+		JOBS="$(((total_cores + 1) / 2))"
+	fi
+fi
+
+if ! [[ "$JOBS" =~ ^[1-9][0-9]*$ ]]; then
+	JOBS=1
+fi
+
 echo -e "${YELLOW}Запускаю clang-tidy для ${#cpp_files[@]} файлов...${NC}"
 
-clang_tidy_args=("-p" "$BUILD_DIR")
+clang_tidy_args=("-p" "$BUILD_DIR" "-quiet")
 
 if [ "$APPLY_FIXES" = true ]; then
 	clang_tidy_args+=("--fix" "--format-style=file")
@@ -116,8 +148,17 @@ if [ "$APPLY_FIXES" = true ]; then
 fi
 
 set +e
-clang-tidy "${cpp_files[@]}" "${clang_tidy_args[@]}"
-clang_tidy_exit_code=$?
+if [ "$JOBS" -gt 1 ] && command -v xargs &> /dev/null; then
+	echo -e "${YELLOW}Параллельный запуск clang-tidy: ${JOBS} поток(ов).${NC}"
+	printf '%s\0' "${cpp_files[@]}" | xargs -0 -n1 -P "$JOBS" bash -c 'file="$1"; shift; clang-tidy "$file" "$@"' _ "${clang_tidy_args[@]}"
+	clang_tidy_exit_code=$?
+else
+	if [ "$JOBS" -gt 1 ]; then
+		echo -e "${YELLOW}xargs не найден, выполняю clang-tidy последовательно.${NC}"
+	fi
+	clang-tidy "${cpp_files[@]}" "${clang_tidy_args[@]}"
+	clang_tidy_exit_code=$?
+fi
 set -e
 
 if [ $clang_tidy_exit_code -eq 0 ]; then
