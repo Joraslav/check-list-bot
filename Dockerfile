@@ -50,4 +50,6 @@ RUN apt-get update && \
 WORKDIR /app
 COPY --from=build /app/build/check-list-bot /app/check-list-bot
 
+ENV TELEGRAM_BOT_LONG_POLL_TIMEOUT_SEC=1
+
 CMD ["./check-list-bot"]

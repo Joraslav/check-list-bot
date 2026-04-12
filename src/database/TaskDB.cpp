@@ -151,7 +151,7 @@ TaskDB::TaskDB(std::string_view db_path) : db_path_(db_path) {
 }
 
 bool TaskDB::IsUserExist(int64_t user_id) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::SELECT_IS_USER_EXIST));
     try {
         stmt->bind(1, user_id);
@@ -166,7 +166,7 @@ bool TaskDB::IsUserExist(int64_t user_id) {
 }
 
 void TaskDB::AddUser(int64_t user_id, const std::string& user_name) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     std::unique_ptr<TransactionGuard> transaction;
     if (!manual_transaction_active_ && !guard_transaction_active_) {
         transaction = std::make_unique<TransactionGuard>(*this);
@@ -189,7 +189,7 @@ void TaskDB::AddUser(int64_t user_id, const std::string& user_name) {
 
 std::optional<int64_t> TaskDB::AddTask(int64_t user_id, const std::string& text,
                                        TaskStatus status) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     std::unique_ptr<TransactionGuard> transaction;
     if (!manual_transaction_active_ && !guard_transaction_active_) {
         transaction = std::make_unique<TransactionGuard>(*this);
@@ -222,7 +222,7 @@ std::optional<int64_t> TaskDB::AddTask(int64_t user_id, const std::string& text,
 }
 
 std::optional<TaskList> TaskDB::GetAllTasks(int64_t user_id) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::SELECT_TASKS_ALL));
 
     try {
@@ -248,7 +248,7 @@ std::optional<TaskList> TaskDB::GetAllTasks(int64_t user_id) {
 }
 
 std::optional<TaskList> TaskDB::GetActiveOrCompletedTasks(int64_t user_id, TaskStatus status) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::SELECT_TASKS_BY_STATUS));
 
     try {
@@ -276,7 +276,7 @@ std::optional<TaskList> TaskDB::GetActiveOrCompletedTasks(int64_t user_id, TaskS
 }
 
 TaskStatistics TaskDB::GetUserStatistics(int64_t user_id) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     ScopedStatement stmt(statement_manager_->Get(StatementType::GET_USER_STATISTICS));
     try {
         stmt->bind(1, user_id);
@@ -295,7 +295,7 @@ TaskStatistics TaskDB::GetUserStatistics(int64_t user_id) {
 }
 
 void TaskDB::UpdateTaskStatus(int64_t user_id, int64_t task_id, TaskStatus new_status) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     std::unique_ptr<TransactionGuard> transaction;
     if (!manual_transaction_active_ && !guard_transaction_active_) {
         transaction = std::make_unique<TransactionGuard>(*this);
@@ -319,7 +319,7 @@ void TaskDB::UpdateTaskStatus(int64_t user_id, int64_t task_id, TaskStatus new_s
 }
 
 void TaskDB::EditTask(int64_t user_id, int64_t task_id, const std::string& new_text) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     std::unique_ptr<TransactionGuard> transaction;
     if (!manual_transaction_active_ && !guard_transaction_active_) {
         transaction = std::make_unique<TransactionGuard>(*this);
@@ -357,7 +357,7 @@ void TaskDB::EditTask(int64_t user_id, int64_t task_id, const std::string& new_t
 }
 
 void TaskDB::DeleteTask(int64_t user_id, int64_t task_id) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     std::unique_ptr<TransactionGuard> transaction;
     if (!manual_transaction_active_ && !guard_transaction_active_) {
         transaction = std::make_unique<TransactionGuard>(*this);
@@ -386,7 +386,7 @@ void TaskDB::DeleteTask(int64_t user_id, int64_t task_id) {
 }
 
 void TaskDB::DeleteAllUserTasks(int64_t user_id) {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     std::unique_ptr<TransactionGuard> transaction;
     if (!manual_transaction_active_ && !guard_transaction_active_) {
         transaction = std::make_unique<TransactionGuard>(*this);
@@ -409,12 +409,12 @@ void TaskDB::DeleteAllUserTasks(int64_t user_id) {
 }
 
 bool TaskDB::IsConnected() noexcept {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     return db_ != nullptr;
 }
 
 void TaskDB::BeginTransaction() {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     if (manual_transaction_active_) {
         throw std::logic_error("Transaction already active");
     }
@@ -423,7 +423,7 @@ void TaskDB::BeginTransaction() {
 }
 
 void TaskDB::CommitTransaction() {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     if (!manual_transaction_active_) {
         throw std::logic_error("No active transaction");
     }
@@ -432,7 +432,7 @@ void TaskDB::CommitTransaction() {
 }
 
 void TaskDB::RollbackTransaction() {
-    const std::lock_guard<std::recursive_mutex> lock(DbMutex());
+    const std::scoped_lock lock(DbMutex());
     if (!manual_transaction_active_) {
         throw std::logic_error("No active transaction");
     }

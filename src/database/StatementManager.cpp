@@ -51,7 +51,7 @@ void StatementManager::ResetAll() {
     for (auto& statement_node : statements_) {
         if (statement_node.second) {
             try {
-                statement_node.second->reset();
+                (*statement_node.second).reset();
             } catch (const StatementManager::Exception& e) {
                 throw std::runtime_error(
                     std::format("Failed to reset statement with type: {}, Error: {}",
