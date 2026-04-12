@@ -1,6 +1,6 @@
 ---
 description: "Use when writing tests, adding test cases or reviewing test files. Covers GTest fixture conventions, naming patterns and assertion rules for this project."
-applyTo: "tests/**"
+applyTo: "tests/Test_*.cpp"
 ---
 
 # Стиль написания тестов
