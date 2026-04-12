@@ -36,7 +36,7 @@ applyTo: "**/*.{cpp,hpp}"
 
 - **Никаких владеющих сырых указателей** — владение выражать через `std::unique_ptr`, `std::shared_ptr` или RAII-объекты; сырые указатели допустимы только как невладеющие/optional-ссылки, когда ссылка не подходит по семантике
 - Для SQLite-стейтментов — только `ScopedStatement` (автоматический `reset()`)
-- Транзакции — через `TransactionGuard` (RAII), не через ручной Begin/Commit
+- Транзакции — предпочитать `TransactionGuard` (RAII) по умолчанию; ручные `BeginTransaction` / `CommitTransaction` / `RollbackTransaction` допустимы в тестах, batch-операциях и когда нужны явно управляемые границы транзакции
 - SQL-строки — только `constexpr` в `SQL.hpp`, никакой конкатенации строк
 
 # Обработка ошибок
