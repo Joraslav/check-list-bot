@@ -1,5 +1,7 @@
 #include "ScopedStatement.hpp"
 
+#include <utility>
+
 using SQLite::Statement;
 
 namespace database {
@@ -37,10 +39,8 @@ void ScopedStatement::Reset() noexcept {
 }
 
 Statement* ScopedStatement::Release() noexcept {
-    Statement* released_stmt = stmt_;
     owns_ = false;
-    stmt_ = nullptr;
-    return released_stmt;
+    return std::exchange(stmt_, nullptr);
 }
 
 }  // namespace database
