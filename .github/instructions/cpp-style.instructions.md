@@ -13,6 +13,8 @@ applyTo: "**/*.{cpp,hpp}"
 | Приватные поля класса | `snake_case_` (с `_` в конце) | `db_`, `statement_manager_` |
 | Параметры конструктора (при совпадении с полем) | `p_` префикс | `p_user_id`, `p_text` |
 | `constexpr`/`static` константы | `kPascalCase` | `kUserId`, `kMinLevel` |
+
+Публичные поля структур (`struct`) — `snake_case` **без** завершающего `_`. Суффикс `_` только у приватных полей классов (`class`).
 | `static constexpr` строки (в классах) | `UPPER_SNAKE_CASE` | `INSERT_USER`, `SELECT_USER` |
 | Пространства имён | `snake_case` | `database`, `bot`, `logging` |
 | Файлы заголовков | `PascalCase.hpp` | `TaskDB.hpp`, `ScopedStatement.hpp` |
@@ -31,6 +33,15 @@ applyTo: "**/*.{cpp,hpp}"
 - Копирование запрещать явно через `= delete` когда не нужно
 - Анонимные пространства имён для символов уровня translation unit (см. `main.cpp`)
 - `std::move` — при передаче во владение, не при возврате (NRVO)
+- Конструкторы помечать `explicit` (в том числе многоаргументные)
+- Если конструктор принимает строку, предоставлять две перегрузки: `std::string` (со `std::move` в списке инициализации) и `std::string_view`:
+  ```cpp
+  explicit Task(int64_t p_user_id, std::string p_text, TaskStatus p_status)
+      : user_id(p_user_id), text(std::move(p_text)), status(p_status) {}
+
+  explicit Task(int64_t p_user_id, std::string_view p_text, TaskStatus p_status)
+      : user_id(p_user_id), text(p_text), status(p_status) {}
+  ```
 
 # Управление ресурсами (RAII)
 
