@@ -1,0 +1,35 @@
+services:
+  check-list-bot:
+    image: ${CHECK_LIST_BOT_IMAGE:-ghcr.io/joraslav/check-list-bot:latest}
+    container_name: check-list-bot
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN is required}
+      TELEGRAM_BOT_DB_PATH: /app/data/tasks.db
+      TELEGRAM_BOT_LOG_DIR: /app/logs
+      TELEGRAM_BOT_LONG_POLL_TIMEOUT_SEC: ${TELEGRAM_BOT_LONG_POLL_TIMEOUT_SEC:-1}
+    volumes:
+      - check-list-bot-data:/app/data
+      - check-list-bot-logs:/app/logs
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    stop_grace_period: 1m
+    mem_limit: 512m
+    cpus: 1.0
+
+volumes:
+  check-list-bot-data:
+  check-list-bot-logs:

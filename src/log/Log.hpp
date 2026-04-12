@@ -1,6 +1,7 @@
 #pragma once
 
 #include <concepts>
+#include <filesystem>
 #include <format>
 #include <memory>
 #include <string>
@@ -20,6 +21,12 @@ constexpr LogLevel kMinLevel = LogLevel::INFO;
  * @brief Maximum log level
  */
 constexpr LogLevel kMaxLevel = LogLevel::FATAL;
+
+struct LogConfig {
+    std::filesystem::path file_log_directory = "out/logs";
+    bool enable_console_logging = true;
+    bool enable_file_logging = true;
+};
 
 /**
  * @brief Log category class
@@ -54,6 +61,7 @@ class Log final {
     Log(Log&&) = delete;
     Log& operator=(Log&&) = delete;
 
+    void Configure(LogConfig config);
     void Loging(const LogCategory& category, LogLevel level, std::string_view message) const;
 
  private:

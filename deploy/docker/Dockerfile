@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM ubuntu:24.04 AS build
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -5,7 +7,9 @@ ENV PATH="/root/.local/bin:$PATH"
 ENV POETRY_NO_INTERACTION=1
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 
-RUN apt-get update && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     software-properties-common \
     apt-transport-https \
@@ -29,8 +33,11 @@ COPY pyproject.toml poetry.lock README.md /app/
 COPY conanfile.txt /app/
 COPY profiles/ /app/profiles
 
-RUN poetry install --only dev --no-root
-RUN poetry run conan install . --build=missing -pr:h profiles/Release -pr:b profiles/Release
+RUN --mount=type=cache,target=/root/.cache/pypoetry,sharing=locked \
+    --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    poetry install --only dev --no-root
+RUN --mount=type=cache,id=conan-cache,target=/root/.conan2,sharing=locked \
+    poetry run conan install . --build=missing -pr:h profiles/Release -pr:b profiles/Release
 
 COPY CMakeLists.txt /app/
 COPY cmake/ /app/cmake
@@ -38,10 +45,12 @@ COPY main.cpp /app/
 COPY src/ /app/src
 COPY tests/ /app/tests
 
-RUN poetry run cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
+RUN --mount=type=cache,id=conan-cache,target=/root/.conan2,sharing=locked \
+    poetry run cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DWITH_TESTS=ON
-RUN poetry run cmake --build build --config Release
+RUN --mount=type=cache,id=conan-cache,target=/root/.conan2,sharing=locked \
+    poetry run cmake --build build --config Release
 RUN strip /app/build/check-list-bot || true
 
 FROM build AS test
@@ -62,8 +71,8 @@ RUN groupadd --system --gid 10001 app && \
 
 WORKDIR /app
 COPY --from=build /app/build/check-list-bot /app/check-list-bot
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-COPY healthcheck.sh /usr/local/bin/healthcheck.sh
+COPY deploy/docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY deploy/docker/healthcheck.sh /usr/local/bin/healthcheck.sh
 
 RUN chmod 755 /usr/local/bin/docker-entrypoint.sh /usr/local/bin/healthcheck.sh && \
     mkdir -p /app/data /app/logs && \
