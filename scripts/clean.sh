@@ -29,4 +29,19 @@ if [ -d ".venv" ]; then
     rm -rf .venv || error_exit "Не удалось удалить папку .venv"
 fi
 
+echo -e "${YELLOW}Очистка кэшей инструментов...${NC}"
+
+# Удаление Python кэшей
+find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null
+find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null
+find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null
+
+# Удаление VS Code кэшей (если они в репозитории)
+if [ -d ".vscode" ]; then
+    find .vscode -type f -name "*.code-settings" -delete 2>/dev/null
+fi
+
+# Удаление временных файлов компилятора
+find . -type f \( -name "*.o" -o -name "*.a" -o -name "*.so" \) -delete 2>/dev/null
+
 echo -e "${GREEN}Очистка завершена!${NC}"

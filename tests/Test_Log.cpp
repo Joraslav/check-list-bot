@@ -24,11 +24,32 @@ namespace fs = std::filesystem;
 
 namespace {
 
-class LogTest : public ::testing::Test {
- protected:
-    static constexpr std::string_view kCategoryName = "LogTestCategory"sv;
+/**
+ * @brief RAII-хелпер для управления временной директорией.
+ * Директория удаляется в деструкторе с помощью fs::remove_all.
+ */
+class TemporaryDirectory {
+ public:
+    explicit TemporaryDirectory(std::string_view suffix) : path_(MakeUniquePath(suffix)) {}
 
-    static fs::path MakeUniqueLogDirectory(std::string_view suffix) {
+    ~TemporaryDirectory() {
+        std::error_code ec;
+        fs::remove_all(path_, ec);
+        // Игнорируем ошибки удаления (файловая система может быть недоступна)
+    }
+
+    TemporaryDirectory(const TemporaryDirectory&) = delete;
+    TemporaryDirectory& operator=(const TemporaryDirectory&) = delete;
+    TemporaryDirectory(TemporaryDirectory&&) = default;
+    TemporaryDirectory& operator=(TemporaryDirectory&&) = default;
+
+    [[nodiscard]] const fs::path& Get() const { return path_; }
+
+    // Конверсия к fs::path для удобства
+    operator const fs::path&() const { return path_; }
+
+ private:
+    static fs::path MakeUniquePath(std::string_view suffix) {
         const auto unique_part =
             std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()));
         const auto tick_part =
@@ -36,6 +57,13 @@ class LogTest : public ::testing::Test {
         return fs::temp_directory_path() /
                std::format("check-list-bot-log-test-{}-{}-{}", suffix, unique_part, tick_part);
     }
+
+    fs::path path_;
+};
+
+class LogTest : public ::testing::Test {
+ protected:
+    static constexpr std::string_view kCategoryName = "LogTestCategory"sv;
 
     static std::vector<fs::path> CollectLogFiles(const fs::path& dir) {
         std::vector<fs::path> files;
@@ -104,22 +132,23 @@ TEST_F(LogTest, GetInstance_ReturnsSameReferenceForAllCalls) {
 }
 
 TEST_F(LogTest, Configure_FileLoggingDisabled_DoesNotCreateLogDirectory) {
-    const auto log_dir = MakeUniqueLogDirectory("disabled"sv);
+    TemporaryDirectory log_dir("disabled"sv);
 
-    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir,
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir.Get(),
                                            .enable_console_logging = false,
                                            .enable_file_logging = false});
 
     const LogCategory category{std::string(kCategoryName)};
     EXPECT_NO_THROW(Log::GetInstance().Loging(category, LogLevel::INFO, "message"sv));
-    EXPECT_FALSE(fs::exists(log_dir));
+    EXPECT_FALSE(fs::exists(log_dir.Get()));
 }
 
 TEST_F(LogTest, Configure_FileLoggingEnabled_CreatesFileAndWritesCategoryAndMessage) {
-    const auto log_dir = MakeUniqueLogDirectory("enabled"sv);
+    TemporaryDirectory log_dir("enabled"sv);
+    TemporaryDirectory finalize_dir("enabled-finalize"sv);
     const std::string payload = "payload-for-file-check"s;
 
-    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir,
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir.Get(),
                                            .enable_console_logging = false,
                                            .enable_file_logging = true});
 
@@ -127,19 +156,19 @@ TEST_F(LogTest, Configure_FileLoggingEnabled_CreatesFileAndWritesCategoryAndMess
     Log::GetInstance().Loging(category, LogLevel::WARNING, payload);
 
     // Reconfigure to force destruction of previous sinks and flush file buffers.
-    Log::GetInstance().Configure(
-        LogConfig{.file_log_directory = MakeUniqueLogDirectory("enabled-finalize"sv),
-                  .enable_console_logging = false,
-                  .enable_file_logging = false});
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = finalize_dir.Get(),
+                                           .enable_console_logging = false,
+                                           .enable_file_logging = false});
 
-    const auto files = CollectLogFiles(log_dir);
+    const auto files = CollectLogFiles(log_dir.Get());
     ASSERT_FALSE(files.empty());
-    EXPECT_TRUE(AnyLogFileContains(log_dir, "[LogTestCategory]"sv));
-    EXPECT_TRUE(AnyLogFileContains(log_dir, payload));
+    EXPECT_TRUE(AnyLogFileContains(log_dir.Get(), "[LogTestCategory]"sv));
+    EXPECT_TRUE(AnyLogFileContains(log_dir.Get(), payload));
 }
 
 TEST_F(LogTest, Loging_FatalLevel_DoesNotThrow) {
-    Log::GetInstance().Configure(LogConfig{.file_log_directory = MakeUniqueLogDirectory("fatal"sv),
+    TemporaryDirectory log_dir("fatal"sv);
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir.Get(),
                                            .enable_console_logging = false,
                                            .enable_file_logging = false});
 
@@ -148,8 +177,9 @@ TEST_F(LogTest, Loging_FatalLevel_DoesNotThrow) {
 }
 
 TEST_F(LogTest, Macros_DefineCategoryAndLog_WriteFormattedMessage) {
-    const auto log_dir = MakeUniqueLogDirectory("macro"sv);
-    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir,
+    TemporaryDirectory log_dir("macro"sv);
+    TemporaryDirectory finalize_dir("macro-finalize"sv);
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir.Get(),
                                            .enable_console_logging = false,
                                            .enable_file_logging = true});
 
@@ -157,22 +187,21 @@ TEST_F(LogTest, Macros_DefineCategoryAndLog_WriteFormattedMessage) {
     LOG(LocalMacroCategory, INFO, "macro-value={} and text={}"sv, 42, "ok"s);
 
     // Reconfigure to force destruction of previous sinks and flush file buffers.
-    Log::GetInstance().Configure(
-        LogConfig{.file_log_directory = MakeUniqueLogDirectory("macro-finalize"sv),
-                  .enable_console_logging = false,
-                  .enable_file_logging = false});
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = finalize_dir.Get(),
+                                           .enable_console_logging = false,
+                                           .enable_file_logging = false});
 
-    const auto files = CollectLogFiles(log_dir);
+    const auto files = CollectLogFiles(log_dir.Get());
     ASSERT_FALSE(files.empty());
-    EXPECT_TRUE(AnyLogFileContains(log_dir, "[LocalMacroCategory]"sv));
-    EXPECT_TRUE(AnyLogFileContains(log_dir, "macro-value=42 and text=ok"sv));
+    EXPECT_TRUE(AnyLogFileContains(log_dir.Get(), "[LocalMacroCategory]"sv));
+    EXPECT_TRUE(AnyLogFileContains(log_dir.Get(), "macro-value=42 and text=ok"sv));
 }
 
 TEST_F(LogTest, Configure_ConcurrentWithLoging_CompletesWithoutExceptions) {
-    Log::GetInstance().Configure(
-        LogConfig{.file_log_directory = MakeUniqueLogDirectory("concurrent-init"sv),
-                  .enable_console_logging = false,
-                  .enable_file_logging = false});
+    TemporaryDirectory init_dir("concurrent-init"sv);
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = init_dir.Get(),
+                                           .enable_console_logging = false,
+                                           .enable_file_logging = false});
 
     constexpr int kConfigureIterations = 150;
     constexpr int kLoggerThreads = 6;
@@ -180,11 +209,15 @@ TEST_F(LogTest, Configure_ConcurrentWithLoging_CompletesWithoutExceptions) {
 
     std::atomic<bool> has_error = false;
 
-    std::thread configure_thread([&has_error]() {
+    std::vector<TemporaryDirectory> thread_dirs;
+    thread_dirs.reserve(kConfigureIterations);
+
+    std::thread configure_thread([&has_error, &thread_dirs]() {
         for (int i = 0; i < kConfigureIterations; ++i) {
             try {
+                thread_dirs.emplace_back("concurrent"sv);
                 Log::GetInstance().Configure(
-                    LogConfig{.file_log_directory = MakeUniqueLogDirectory("concurrent"sv),
+                    LogConfig{.file_log_directory = thread_dirs.back().Get(),
                               .enable_console_logging = false,
                               .enable_file_logging = false});
             } catch (...) {
