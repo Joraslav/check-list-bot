@@ -6,8 +6,8 @@
 #include <atomic>
 #include <chrono>
 #include <filesystem>
-#include <fstream>
 #include <format>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <sstream>
@@ -29,7 +29,8 @@ class LogTest : public ::testing::Test {
     static constexpr std::string_view kCategoryName = "LogTestCategory"sv;
 
     static fs::path MakeUniqueLogDirectory(std::string_view suffix) {
-        const auto unique_part = std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+        const auto unique_part =
+            std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()));
         const auto tick_part =
             std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
         return fs::temp_directory_path() /
@@ -47,8 +48,7 @@ class LogTest : public ::testing::Test {
                 continue;
             }
             const auto& path = entry.path();
-            if (path.extension() == ".log" &&
-                path.filename().string().starts_with("BotLog_"sv)) {
+            if (path.extension() == ".log" && path.filename().string().starts_with("BotLog_"sv)) {
                 files.push_back(path);
             }
         }
@@ -65,9 +65,8 @@ class LogTest : public ::testing::Test {
 
     static bool AnyLogFileContains(const fs::path& dir, std::string_view needle) {
         const auto files = CollectLogFiles(dir);
-        return std::ranges::any_of(files, [needle](const auto& file) {
-            return ReadFile(file).contains(needle);
-        });
+        return std::ranges::any_of(
+            files, [needle](const auto& file) { return ReadFile(file).contains(needle); });
     }
 };
 
@@ -107,10 +106,9 @@ TEST_F(LogTest, GetInstance_ReturnsSameReferenceForAllCalls) {
 TEST_F(LogTest, Configure_FileLoggingDisabled_DoesNotCreateLogDirectory) {
     const auto log_dir = MakeUniqueLogDirectory("disabled"sv);
 
-    Log::GetInstance().Configure(
-        LogConfig{.file_log_directory = log_dir,
-                  .enable_console_logging = false,
-                  .enable_file_logging = false});
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir,
+                                           .enable_console_logging = false,
+                                           .enable_file_logging = false});
 
     const LogCategory category{std::string(kCategoryName)};
     EXPECT_NO_THROW(Log::GetInstance().Loging(category, LogLevel::INFO, "message"sv));
@@ -121,10 +119,9 @@ TEST_F(LogTest, Configure_FileLoggingEnabled_CreatesFileAndWritesCategoryAndMess
     const auto log_dir = MakeUniqueLogDirectory("enabled"sv);
     const std::string payload = "payload-for-file-check"s;
 
-    Log::GetInstance().Configure(
-        LogConfig{.file_log_directory = log_dir,
-                  .enable_console_logging = false,
-                  .enable_file_logging = true});
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir,
+                                           .enable_console_logging = false,
+                                           .enable_file_logging = true});
 
     const LogCategory category{std::string(kCategoryName)};
     Log::GetInstance().Loging(category, LogLevel::WARNING, payload);
@@ -142,10 +139,9 @@ TEST_F(LogTest, Configure_FileLoggingEnabled_CreatesFileAndWritesCategoryAndMess
 }
 
 TEST_F(LogTest, Loging_FatalLevel_DoesNotThrow) {
-    Log::GetInstance().Configure(
-        LogConfig{.file_log_directory = MakeUniqueLogDirectory("fatal"sv),
-                  .enable_console_logging = false,
-                  .enable_file_logging = false});
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = MakeUniqueLogDirectory("fatal"sv),
+                                           .enable_console_logging = false,
+                                           .enable_file_logging = false});
 
     const LogCategory category("fatal-test"s);
     EXPECT_NO_THROW(Log::GetInstance().Loging(category, LogLevel::FATAL, "fatal-message"sv));
@@ -153,10 +149,9 @@ TEST_F(LogTest, Loging_FatalLevel_DoesNotThrow) {
 
 TEST_F(LogTest, Macros_DefineCategoryAndLog_WriteFormattedMessage) {
     const auto log_dir = MakeUniqueLogDirectory("macro"sv);
-    Log::GetInstance().Configure(
-        LogConfig{.file_log_directory = log_dir,
-                  .enable_console_logging = false,
-                  .enable_file_logging = true});
+    Log::GetInstance().Configure(LogConfig{.file_log_directory = log_dir,
+                                           .enable_console_logging = false,
+                                           .enable_file_logging = true});
 
     DEFINE_LOG_CATEGORY_STATIC(LocalMacroCategory);
     LOG(LocalMacroCategory, INFO, "macro-value={} and text={}"sv, 42, "ok"s);
