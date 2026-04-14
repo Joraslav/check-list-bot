@@ -1,5 +1,5 @@
 #include "Bot.hpp"
-#include "src/log/Log.hpp"
+#include "Log.hpp"
 
 #include <charconv>
 #include <cstdint>

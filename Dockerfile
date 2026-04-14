@@ -62,8 +62,8 @@ RUN groupadd --system --gid 10001 app && \
 
 WORKDIR /app
 COPY --from=build /app/build/check-list-bot /app/check-list-bot
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-COPY healthcheck.sh /usr/local/bin/healthcheck.sh
+COPY deploy/docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY deploy/docker/healthcheck.sh /usr/local/bin/healthcheck.sh
 
 RUN chmod 755 /usr/local/bin/docker-entrypoint.sh /usr/local/bin/healthcheck.sh && \
     mkdir -p /app/data /app/logs && \
