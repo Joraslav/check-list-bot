@@ -57,7 +57,7 @@ namespace {
             return spdlog::level::critical;
     }
 
-    return spdlog::level::info;
+    std::unreachable();
 }
 
 }  // namespace
@@ -119,13 +119,17 @@ class Log::Impl {
     }
 };
 
-Log::Log() : impl_(std::make_unique<Log::Impl>(LogConfig{})) {}
+Log::Log() : impl_(std::make_shared<Log::Impl>(LogConfig{})) {}
 Log::~Log() = default;
 
-void Log::Configure(LogConfig config) { impl_ = std::make_unique<Log::Impl>(std::move(config)); }
+void Log::Configure(LogConfig config) {
+    auto new_impl = std::make_shared<Log::Impl>(std::move(config));
+    impl_.store(std::move(new_impl), std::memory_order_release);
+}
 
 void Log::Loging(const LogCategory& category, LogLevel level, std::string_view message) const {
-    impl_->Log(level, std::format("[{}] {}", category.GetName(), message));
+    const auto impl = impl_.load(std::memory_order_acquire);
+    impl->Log(level, std::format("[{}] {}", category.GetName(), message));
 }
 
 }  // namespace logging

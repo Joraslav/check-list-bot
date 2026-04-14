@@ -1,6 +1,7 @@
 #pragma once
 
 #include <concepts>
+#include <atomic>
 #include <filesystem>
 #include <format>
 #include <memory>
@@ -68,7 +69,7 @@ class Log final {
     Log();
     ~Log();
     class Impl;
-    std::unique_ptr<Impl> impl_;
+    std::atomic<std::shared_ptr<Impl>> impl_;
 };
 
 template <typename T>
