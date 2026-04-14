@@ -129,26 +129,6 @@ docker compose -f deploy/docker/compose.yml --env-file deploy/docker/.env up -d
 
 По умолчанию Compose использует именованные volume для базы и логов, поэтому данные сохраняются между перезапусками контейнера.
 
-## Структура проекта
-
-```plaintext
-check-list-bot/
-├── src/
-│   ├── bot/           – логика бота, обработчики команд
-│   ├── database/      – работа с БД, модели задач
-│   ├── log/           – модуль логирования
-│   └── utils/         – вспомогательные утилиты
-├── cmake/             – дополнительные CMake-скрипты
-├── profiles/          – профили Conan (Debug/Release)
-├── scripts/           – вспомогательные скрипты
-├── deploy/docker/     – Dockerfile, compose и entrypoint/healthcheck для деплоя
-├── .github/workflows/ – CI/CD (форматирование, сборка)
-├── CMakeLists.txt     – корневой CMake
-├── conanfile.txt      – зависимости Conan
-├── pyproject.toml     – конфигурация Poetry (для dev-инструментов)
-└── main.cpp           – точка входа
-```
-
 ## Разработка
 
 ### Форматирование кода
@@ -166,9 +146,6 @@ check-list-bot/
 ```
 
 ### Тестирование
-
-В проекте есть unit-тесты на Google Test для клавиатур, statement manager, scoped statement,
-transaction guard и `TaskDB`.
 
 Запуск через CTest:
 
@@ -241,4 +218,4 @@ docker volume inspect check-list-bot_check-list-bot-data
 
 Автор: [Joraslav](mailto:yar.mozg2002@gmail.com)
 
-GitHub: [https://github.com/Joraslav/check-list-bot](https://github.com/Joraslav/check-list-bot)
+GitHub: [Joraslav](https://github.com/Joraslav)
