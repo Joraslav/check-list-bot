@@ -36,8 +36,7 @@ COPY profiles/ /app/profiles
 RUN --mount=type=cache,target=/root/.cache/pypoetry,sharing=locked \
     --mount=type=cache,target=/root/.cache/pip,sharing=locked \
     poetry install --only dev --no-root
-RUN --mount=type=cache,id=conan-cache,target=/root/.conan2,sharing=locked \
-    poetry run conan install . --build=missing -pr:h profiles/Release -pr:b profiles/Release
+RUN poetry run conan install . --build=missing -pr:h profiles/Release -pr:b profiles/Release
 
 COPY CMakeLists.txt /app/
 COPY cmake/ /app/cmake
@@ -45,12 +44,10 @@ COPY main.cpp /app/
 COPY src/ /app/src
 COPY tests/ /app/tests
 
-RUN --mount=type=cache,id=conan-cache,target=/root/.conan2,sharing=locked \
-    poetry run cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
+RUN poetry run cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DWITH_TESTS=ON
-RUN --mount=type=cache,id=conan-cache,target=/root/.conan2,sharing=locked \
-    poetry run cmake --build build --config Release
+RUN poetry run cmake --build build --config Release
 RUN strip /app/build/check-list-bot || true
 
 FROM build AS test
