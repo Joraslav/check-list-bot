@@ -10,9 +10,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(WITH_TESTS "Build tests" OFF)
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(WITH_TESTS ON)
-endif()
 option(ENABLE_CCACHE "Use ccache to speed up C/C++ rebuilds" ON)
 if(ENABLE_CCACHE)
     find_program(CCACHE_PROGRAM ccache)
@@ -49,5 +46,5 @@ if(WITH_TESTS)
 endif()
 
 add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE bot)
+target_link_libraries(${PROJECT_NAME} PRIVATE bot log)
 

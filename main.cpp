@@ -1,4 +1,5 @@
 #include "Bot.hpp"
+#include "Log.hpp"
 
 #include <charconv>
 #include <cstdint>
@@ -8,6 +9,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace {
 
@@ -59,7 +61,12 @@ int main() {
 
         const std::string& token = token_env.value();
         const std::string db_path = ReadEnvVar("TELEGRAM_BOT_DB_PATH").value_or("tasks.db");
+        const std::string log_directory = ReadEnvVar("TELEGRAM_BOT_LOG_DIR").value_or("out/logs");
         const int32_t long_poll_timeout_sec = ReadLongPollTimeoutSec();
+
+        logging::LogConfig log_config;
+        log_config.file_log_directory = log_directory;
+        logging::Log::GetInstance().Configure(std::move(log_config));
 
         bot::Bot my_bot(token, db_path, long_poll_timeout_sec);
         my_bot.Run();

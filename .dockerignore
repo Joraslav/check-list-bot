@@ -57,6 +57,7 @@ compile_commands.json
 *.log 
 *.bak 
 *.swp 
+tasks.db
 
 # VS Code folder
 .vscode/
@@ -71,6 +72,10 @@ CMakeUserPresets.json
 
 # Out directory
 out/
+
+# Local runtime data
+data/
+logs/
 
 # Scripts
 scripts/fix_style.sh
@@ -120,3 +125,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Docker artifacts
+deploy/docker/compose.override.yml

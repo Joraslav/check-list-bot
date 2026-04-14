@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM ubuntu:24.04 AS build
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -5,7 +7,9 @@ ENV PATH="/root/.local/bin:$PATH"
 ENV POETRY_NO_INTERACTION=1
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 
-RUN apt-get update && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     software-properties-common \
     apt-transport-https \
@@ -29,7 +33,9 @@ COPY pyproject.toml poetry.lock README.md /app/
 COPY conanfile.txt /app/
 COPY profiles/ /app/profiles
 
-RUN poetry install --only dev --no-root
+RUN --mount=type=cache,target=/root/.cache/pypoetry,sharing=locked \
+    --mount=type=cache,target=/root/.cache/pip,sharing=locked \
+    poetry install --only dev --no-root
 RUN poetry run conan install . --build=missing -pr:h profiles/Release -pr:b profiles/Release
 
 COPY CMakeLists.txt /app/
