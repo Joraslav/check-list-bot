@@ -11,7 +11,27 @@ DEFINE_LOG_CATEGORY_STATIC(SlashCommandHandlerLog);
 namespace bot {
 
 void SlashCommandKeyboardHandler::Register(TgBot::Bot& bot) {
-    // Register all slash command handlers
+    bot.getEvents().onAnyMessage([](const Message::Ptr& message) {
+        if (message == nullptr) {
+            return;
+        }
+
+        const std::string text = message->text.empty() ? "<empty>" : message->text;
+        LOG(SlashCommandHandlerLog, INFO, "Incoming message in chat {}: {}", message->chat->id,
+            text);
+    });
+
+    bot.getEvents().onUnknownCommand([](const Message::Ptr& message) {
+        if (message == nullptr) {
+            return;
+        }
+
+        const std::string text = message->text.empty() ? "<empty>" : message->text;
+        LOG(SlashCommandHandlerLog, WARNING, "Unknown command received in chat {}: {}",
+            message->chat->id, text);
+    });
+
+    // Register all slash command handlers. onCommand expects command name without '/'.
     bot.getEvents().onCommand(
         SlashCommandKeyboard::GetCommandWithSlash(SlashCommand::START),
         [&bot](const Message::Ptr& message) { HandleCommand(bot, message, SlashCommand::START); });
@@ -40,6 +60,9 @@ void SlashCommandKeyboardHandler::Register(TgBot::Bot& bot) {
 
 void SlashCommandKeyboardHandler::HandleCommand(TgBot::Bot& bot, const Message::Ptr& message,
                                                 SlashCommand command) {
+    LOG(SlashCommandHandlerLog, INFO, "Command '{}' received from chat {}",
+        SlashCommandKeyboard::GetCommandWithSlash(command), message->chat->id);
+
     using enum SlashCommand;
     switch (command) {
         case START:
