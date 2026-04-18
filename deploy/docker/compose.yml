@@ -9,6 +9,9 @@ services:
       TELEGRAM_BOT_DB_PATH: /app/data/tasks.db
       TELEGRAM_BOT_LOG_DIR: /app/logs
       TELEGRAM_BOT_LONG_POLL_TIMEOUT_SEC: ${TELEGRAM_BOT_LONG_POLL_TIMEOUT_SEC:-1}
+      TELEGRAM_BOT_CLEAR_WEBHOOK_ON_START: ${TELEGRAM_BOT_CLEAR_WEBHOOK_ON_START:-false}
+      TELEGRAM_BOT_WEBHOOK_CLEANUP_MAX_ATTEMPTS: ${TELEGRAM_BOT_WEBHOOK_CLEANUP_MAX_ATTEMPTS:-3}
+      TELEGRAM_BOT_PROXY: ${TELEGRAM_BOT_PROXY:-}
     volumes:
       - check-list-bot-data:/app/data
       - check-list-bot-logs:/app/logs

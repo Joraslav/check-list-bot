@@ -6,6 +6,10 @@
 
 #include "SlashCommandKeyboard.hpp"
 
+namespace database {
+class TaskDB;
+}
+
 namespace bot {
 
 class SlashCommandKeyboardHandler final {
@@ -16,8 +20,9 @@ class SlashCommandKeyboardHandler final {
     /**
      * @brief Register slash command handlers.
      * @param bot Reference to TgBot::Bot
+     * @param task_db Reference to task database
      */
-    static void Register(TgBot::Bot& bot);
+    static void Register(TgBot::Bot& bot, database::TaskDB& task_db);
 
     /**
      * @brief Handle command action by enum value.

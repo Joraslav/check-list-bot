@@ -229,11 +229,12 @@ std::optional<TaskList> TaskDB::GetAllTasks(int64_t user_id) {
         stmt->bind(1, user_id);
         TaskList tasks;
         while (stmt->executeStep()) {
-            // id is column 0, but we don't need it
+            const int64_t task_id = stmt->getColumn(0).getInt64();
             const std::string text = stmt->getColumn(1).getString();
             const int status_int = stmt->getColumn(2).getInt();
             const auto status = static_cast<TaskStatus>(status_int);
             tasks.emplace_back(user_id, text, status);
+            tasks.back().id = task_id;
         }
         if (tasks.empty()) {
             return std::nullopt;
@@ -257,11 +258,12 @@ std::optional<TaskList> TaskDB::GetActiveOrCompletedTasks(int64_t user_id, TaskS
         TaskList tasks;
 
         while (stmt->executeStep()) {
-            // id is column 0, but we don't need it
+            const int64_t task_id = stmt->getColumn(0).getInt64();
             const std::string text = stmt->getColumn(1).getString();
             const int status_int = stmt->getColumn(2).getInt();
-            const auto status = static_cast<TaskStatus>(status_int);
-            tasks.emplace_back(user_id, text, status);
+            const auto task_status = static_cast<TaskStatus>(status_int);
+            tasks.emplace_back(user_id, text, task_status);
+            tasks.back().id = task_id;
         }
         if (tasks.empty()) {
             return std::nullopt;

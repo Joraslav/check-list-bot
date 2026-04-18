@@ -15,6 +15,9 @@ ENV_FILE="${PROJECT_ROOT}/deploy/docker/.env"
 
 # Allow overriding compose command if needed (for example, podman-compose wrapper).
 COMPOSE_CMD=${COMPOSE_CMD:-"docker compose"}
+TELEGRAM_API_BASE="https://api.telegram.org"
+CONNECT_TIMEOUT_SEC=5
+MAX_TIME_SEC=15
 
 error_exit() {
     echo -e "${RED}Ошибка: $1${NC}" >&2
@@ -25,6 +28,12 @@ require_compose() {
     if ! ${COMPOSE_CMD} version >/dev/null 2>&1; then
         error_exit "Команда '${COMPOSE_CMD}' недоступна. Установите Docker Compose или задайте COMPOSE_CMD."
     fi
+}
+
+require_tool() {
+    local tool_name="$1"
+    command -v "$tool_name" >/dev/null 2>&1 ||
+        error_exit "Не найдено требуемое приложение в PATH: ${tool_name}"
 }
 
 ensure_env_file() {
@@ -42,8 +51,37 @@ compose() {
     ${COMPOSE_CMD} -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" "$@"
 }
 
+load_env_file() {
+    set -a
+    # shellcheck disable=SC1090
+    source "${ENV_FILE}"
+    set +a
+}
+
+preflight_check_telegram_api() {
+    require_tool curl
+    load_env_file
+
+    if [ -z "${TELEGRAM_BOT_TOKEN:-}" ]; then
+        error_exit "TELEGRAM_BOT_TOKEN отсутствует в ${ENV_FILE}"
+    fi
+
+    local response=""
+    response="$(curl -4 -L -sS --connect-timeout "${CONNECT_TIMEOUT_SEC}" --max-time "${MAX_TIME_SEC}" \
+        "${TELEGRAM_API_BASE}/bot${TELEGRAM_BOT_TOKEN}/getMe")" || {
+        error_exit "Preflight getMe не прошел (network/timeout)."
+    }
+
+    if [[ "$response" != *'"ok":true'* ]]; then
+        error_exit "Preflight getMe вернул неуспешный ответ: ${response}"
+    fi
+
+    echo -e "${GREEN}Preflight getMe прошел успешно (ok=true).${NC}"
+}
+
 deploy() {
     ensure_env_file
+    preflight_check_telegram_api
     echo -e "${YELLOW}Pull образа...${NC}"
     compose pull
     echo -e "${YELLOW}Запуск сервиса...${NC}"

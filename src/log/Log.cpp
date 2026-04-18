@@ -5,6 +5,7 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 #include <chrono>
+#include <csignal>
 #include <filesystem>
 #include <format>
 #include <memory>
@@ -100,7 +101,7 @@ class Log::Impl {
         }
 
         if (level == LogLevel::FATAL) {
-            // TODO: Отправка сигнала на остановку работы
+            std::raise(SIGTERM);
         }
     }
 
@@ -119,7 +120,7 @@ class Log::Impl {
     }
 };
 
-Log::Log() : impl_(std::make_shared<Log::Impl>(LogConfig{})) {}
+Log::Log() : impl_(std::make_shared<Log::Impl>(LogConfig{.enable_file_logging = false})) {}
 Log::~Log() = default;
 
 void Log::Configure(LogConfig config) {

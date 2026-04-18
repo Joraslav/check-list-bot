@@ -53,6 +53,13 @@ class SlashCommandKeyboard final {
      */
     static std::string GetCommandWithSlash(SlashCommand cmd);
 
+    /**
+     * @brief Get the command name without slash prefix (lowercase).
+     * @param cmd The command
+     * @return Command name without '/'
+     */
+    static std::string GetCommandName(SlashCommand cmd);
+
  private:
     /**
      * @brief Check if string starts with '/'
@@ -74,13 +81,6 @@ class SlashCommandKeyboard final {
      * @return Lowercase string
      */
     static std::string ToLower(std::string_view str) noexcept;
-
-    /**
-     * @brief Get the name of a command.
-     * @param cmd The command
-     * @return Command name (without '/')
-     */
-    static std::string GetCommandName(SlashCommand cmd);
 };
 
 }  // namespace bot

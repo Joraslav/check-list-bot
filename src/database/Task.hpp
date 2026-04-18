@@ -14,6 +14,7 @@ namespace database {
 enum class TaskStatus { ACTIVE, COMPLETED };
 
 struct Task {
+    int64_t id = -1;
     int64_t user_id;
     std::string text;
     TaskStatus status;
