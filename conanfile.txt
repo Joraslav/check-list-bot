@@ -1,6 +1,6 @@
 [requires]
 sqlitecpp/3.3.3
-tgbot/1.9.1
+tgbot/1.10
 spdlog/1.17.0
 magic_enum/0.9.7
 gtest/1.17.0
